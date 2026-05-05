@@ -1,0 +1,106 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Auth Service
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=2
+
+        # Menu Service
+        - id: menu-service
+          uri: lb://menu-service
+          predicates:
+            - Path=/api/menu/**
+          filters:
+            - StripPrefix=2
+
+        # Inventory Service
+        - id: inventory-service
+          uri: lb://inventory-service
+          predicates:
+            - Path=/api/inventory/**
+          filters:
+            - StripPrefix=2
+
+        # Order Service
+        - id: order-service
+          uri: lb://order-service
+          predicates:
+            - Path=/api/orders/**
+          filters:
+            - StripPrefix=2
+
+        # Payment Service
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/payments/**
+          filters:
+            - StripPrefix=2
+
+        # Kitchen Service
+        - id: kitchen-service
+          uri: lb://kitchen-service
+          predicates:
+            - Path=/api/kitchen/**
+          filters:
+            - StripPrefix=2
+
+        # Notification Service
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - StripPrefix=2
+
+      # Circuit Breaker Configuration
+      default-filters:
+        - name: CircuitBreaker
+          args:
+            name: default
+            fallbackUri: forward:/fallback
+
+  # Circuit Breaker
+  resilience4j:
+    circuitbreaker:
+      instances:
+        default:
+          failureRateThreshold: 50
+          waitDurationInOpenState: 5s
+          slidingWindowSize: 10
+          minimumNumberOfCalls: 5
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.quickbite.gateway: DEBUG

@@ -1,0 +1,284 @@
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import { Clock, CheckCircle, Truck, Package, Eye, RefreshCw } from 'lucide-react';
+
+const Orders = () => {
+  const [orders, setOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState(null);
+
+  useEffect(() => {
+    loadOrders();
+    // Simular actualización en tiempo real
+    const interval = setInterval(loadOrders, 30000); // Actualizar cada 30 segundos
+    return () => clearInterval(interval);
+  }, []);
+
+  const loadOrders = async () => {
+    try {
+      // Simulación de datos - reemplazar con llamada a API real
+      const mockData = [
+        {
+          id: "ORD-001",
+          items: [
+            { name: "Hamburguesa Clásica", quantity: 2, price: 8990 },
+            { name: "Papas Fritas Grandes", quantity: 1, price: 3990 }
+          ],
+          total: 21970,
+          status: "preparing",
+          createdAt: "2026-05-05T15:30:00Z",
+          estimatedTime: 20,
+          trackingNumber: "TRK-123456"
+        },
+        {
+          id: "ORD-002",
+          items: [
+            { name: "Combo Big Bite", quantity: 1, price: 12990 }
+          ],
+          total: 12990,
+          status: "ready",
+          createdAt: "2026-05-05T15:15:00Z",
+          estimatedTime: 5,
+          trackingNumber: "TRK-123457"
+        },
+        {
+          id: "ORD-003",
+          items: [
+            { name: "Hamburguesa Clásica", quantity: 1, price: 8990 },
+            { name: "Ensalada César", quantity: 1, price: 6990 }
+          ],
+          total: 15980,
+          status: "delivered",
+          createdAt: "2026-05-05T14:45:00Z",
+          estimatedTime: 0,
+          trackingNumber: "TRK-123458"
+        }
+      ];
+      setOrders(mockData);
+      setLoading(false);
+    } catch (error) {
+      toast.error('Error al cargar los pedidos');
+      setLoading(false);
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'pending':
+        return <Clock className="h-5 w-5 text-yellow-500" />;
+      case 'preparing':
+        return <Package className="h-5 w-5 text-blue-500" />;
+      case 'ready':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'delivered':
+        return <Truck className="h-5 w-5 text-gray-500" />;
+      default:
+        return <Clock className="h-5 w-5 text-gray-400" />;
+    }
+  };
+
+  const getStatusText = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'Pendiente';
+      case 'preparing':
+        return 'En preparación';
+      case 'ready':
+        return 'Listo para entrega';
+      case 'delivered':
+        return 'Entregado';
+      default:
+        return 'Desconocido';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'preparing':
+        return 'bg-blue-100 text-blue-800';
+      case 'ready':
+        return 'bg-green-100 text-green-800';
+      case 'delivered':
+        return 'bg-gray-100 text-gray-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('es-CL', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit'
+    });
+  };
+
+  const refreshOrders = () => {
+    setLoading(true);
+    loadOrders();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Mis Pedidos</h1>
+        <button
+          onClick={refreshOrders}
+          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Actualizar
+        </button>
+      </div>
+
+      {orders.length === 0 ? (
+        <div className="text-center py-12">
+          <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-600 mb-2">No tienes pedidos</h2>
+          <p className="text-gray-500 mb-6">¡Haz tu primer pedido en nuestro menú!</p>
+          <a
+            href="/menu"
+            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Ver Menú
+          </a>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Orders List */}
+          <div className="lg:col-span-2 space-y-4">
+            {orders.map(order => (
+              <div
+                key={order.id}
+                className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => setSelectedOrder(order)}
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{order.id}</h3>
+                    <p className="text-sm text-gray-600">{formatTime(order.createdAt)}</p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
+                      {getStatusText(order.status)}
+                    </span>
+                    {getStatusIcon(order.status)}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-gray-600">
+                      {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      ${order.total.toLocaleString('es-CL')}
+                    </p>
+                  </div>
+                  <button className="flex items-center text-blue-600 hover:text-blue-800">
+                    <Eye className="h-4 w-4 mr-1" />
+                    Ver detalles
+                  </button>
+                </div>
+
+                {order.status === 'preparing' && order.estimatedTime > 0 && (
+                  <div className="mt-4 p-3 bg-blue-50 rounded-md">
+                    <div className="flex items-center text-blue-800">
+                      <Clock className="h-4 w-4 mr-2" />
+                      <span className="text-sm">
+                        Tiempo estimado: {order.estimatedTime} minutos
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {order.trackingNumber && (
+                  <div className="mt-3 p-2 bg-gray-50 rounded text-sm text-gray-600">
+                    Seguimiento: <span className="font-medium">{order.trackingNumber}</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Order Details */}
+          <div className="lg:col-span-1">
+            {selectedOrder ? (
+              <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
+                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                  Detalles del Pedido
+                </h2>
+                
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">Pedido #{selectedOrder.id}</p>
+                  <p className="text-sm text-gray-600">
+                    {formatTime(selectedOrder.createdAt)}
+                  </p>
+                </div>
+
+                <div className="space-y-3 mb-4">
+                  {selectedOrder.items.map((item, index) => (
+                    <div key={index} className="flex justify-between py-2 border-b">
+                      <div>
+                        <p className="font-medium text-gray-900">{item.name}</p>
+                        <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
+                      </div>
+                      <p className="font-medium text-gray-900">
+                        ${(item.price * item.quantity).toLocaleString('es-CL')}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t pt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium">
+                      ${selectedOrder.total.toLocaleString('es-CL')}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-gray-600">Delivery:</span>
+                    <span className="font-medium">$0</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="text-lg font-semibold">Total:</span>
+                    <span className="text-xl font-bold text-blue-600">
+                      ${selectedOrder.total.toLocaleString('es-CL')}
+                    </span>
+                  </div>
+                </div>
+
+                {selectedOrder.trackingNumber && (
+                  <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                    <p className="text-sm text-gray-600 mb-1">Número de seguimiento:</p>
+                    <p className="font-mono font-medium">{selectedOrder.trackingNumber}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+                <Eye className="h-12 w-12 mx-auto mb-3 text-gray-400" />
+                <p>Selecciona un pedido para ver los detalles</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Orders;

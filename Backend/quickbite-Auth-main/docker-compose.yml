@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  mysql-auth:
+    image: mysql:8.0
+    container_name: quickbite-auth-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: quickbite_auth
+      MYSQL_USER: authuser
+      MYSQL_PASSWORD: authpass
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_auth_data:/var/lib/mysql
+      - ./src/main/resources/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - quickbite-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+
+  authentication-service:
+    build: .
+    container_name: quickbite-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-auth:3306/quickbite_auth?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: authuser
+      SPRING_DATASOURCE_PASSWORD: authpass
+      JWT_SECRET_KEY: mySecretKeyForQuickBiteAuthenticationService2024
+    depends_on:
+      mysql-auth:
+        condition: service_healthy
+    networks:
+      - quickbite-network
+    restart: unless-stopped
+
+volumes:
+  mysql_auth_data:
+
+networks:
+  quickbite-network:
+    driver: bridge
