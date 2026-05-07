@@ -30,34 +30,23 @@ QuickBite es un sistema de gestión de restaurantes basado en microservicios que
 
 ## 🛠️ Requisitos Previos
 
-### **Opción 1: Desarrollo Local**
+### **Para Evaluación Local (Windows)**
 - Node.js 18+
 - Java 17+
 - Maven 3.6+
-- Git
-
-### **Opción 2: Docker (Recomendado)**
-- Docker Desktop
 - Git
 
 ---
 
 ## 🚀 Instalación y Configuración
 
-### **Método 1: Docker (Recomendado)**
+### **Método 1: Evaluación Local (Recomendado)**
 ```bash
-# 1. Clonar el repositorio
-git clone <repository-url>
-cd QuickBite
-
-# 2. Iniciar todos los servicios
-docker-compose up -d
-
-# 3. Esperar 30 segundos y verificar
-docker-compose ps
+# Windows
+START.bat
 ```
 
-### **Método 2: Desarrollo Local**
+### **Método 2: Desarrollo Manual**
 ```bash
 # 1. Instalar dependencias del frontend
 cd frontend
@@ -70,15 +59,6 @@ node mock-server.js
 # 3. Iniciar frontend (en otra terminal)
 cd frontend
 npm start
-```
-
-### **Método 3: Scripts Automatizados**
-```bash
-# Windows
-.\scripts\deploy.ps1
-
-# Linux/Mac
-./scripts/deploy.sh
 ```
 
 ---
@@ -201,14 +181,12 @@ node mock-server.js
 2. Limpiar localStorage del navegador
 3. Verificar consola para errores específicos
 
-### **Problema: Docker no funciona**
-**Síntomas**: Error al iniciar contenedores
+### **Problema: Scripts no funcionan**
+**Síntomas**: Error al ejecutar START.bat
 **Solución**:
-```bash
-# Limpiar y reconstruir
-docker-compose down -v
-docker-compose build --no-cache
-docker-compose up -d
+```powershell
+# Ejecutar como administrador
+# O iniciar manualmente cada servicio
 ```
 
 ### **Problema: Permisos en Windows**

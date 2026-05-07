@@ -2,10 +2,34 @@
 
 Arquitectura de microservicios para la gestión moderna de restaurantes de comida rápida.
 
+## 🚀 Inicio Rápido para Evaluación Local
+
+### Prerrequisitos
+- Node.js 18+
+- Java 17+
+- Maven 3.6+
+
+### Iniciar el Sistema
+**Windows (Recomendado para evaluación):**
+```bash
+START.bat
+```
+
+### Acceso a la Aplicación
+- **Frontend**: http://localhost:3000
+- **API Gateway**: http://localhost:8080
+- **Eureka Server**: http://localhost:8761
+
+### Credenciales de Prueba
+| Rol | Email | Contraseña |
+|-----|-------|------------|
+| Administrador | admin@quickbite.com | admin123 |
+| Cocina | kitchen@quickbite.com | kitchen123 |
+| Cliente | customer@quickbite.com | customer123 |
+
 ## 🏗️ Arquitectura
 
 ### Microservicios Implementados
-
 - **Auth Service** (`quickbite-Auth-main`) - Autenticación y autorización
 - **Inventory Service** (`quickbite-ms-inventario`) - Gestión de inventario
 - **Menu Service** (`quickbite-menu-service`) - Catálogo de productos
@@ -15,48 +39,11 @@ Arquitectura de microservicios para la gestión moderna de restaurantes de comid
 - **Notification Service** (`quickbite-ms-notificaciones`) - Sistema de notificaciones
 
 ### Frontend
-
 Aplicación React con las siguientes características:
 - **Interfaz moderna** con Tailwind CSS
 - **Navegación por roles** (Cliente, Cocina, Administrador)
 - **Actualizaciones en tiempo real**
 - **Diseño responsive**
-
-## 🚀 Inicio Rápido
-
-### Prerrequisitos
-
-- Docker y Docker Compose
-- Node.js 18+ (para desarrollo local)
-- Java 17+ (para desarrollo local)
-
-### Ejecución con Docker
-
-```bash
-# Clonar el repositorio
-git clone <repository-url>
-cd QuickBite
-
-# Iniciar todos los servicios
-docker-compose up -d
-
-# Verificar que los servicios estén corriendo
-docker-compose ps
-```
-
-### Acceso a la Aplicación
-
-- **Frontend**: http://localhost:3000
-- **API Gateway**: http://localhost:8080
-- **Eureka Server**: http://localhost:8761
-
-### Credenciales de Prueba
-
-| Rol | Email | Contraseña |
-|-----|-------|------------|
-| Administrador | admin@quickbite.com | admin123 |
-| Cocina | kitchen@quickbite.com | kitchen123 |
-| Cliente | customer@quickbite.com | customer123 |
 
 ## 📁 Estructura del Proyecto
 
@@ -67,8 +54,7 @@ QuickBite/
 │   │   ├── components/         # Componentes reutilizables
 │   │   ├── pages/             # Páginas principales
 │   │   └── App.js             # Componente principal
-│   ├── package.json
-│   └── Dockerfile
+│   └── package.json
 ├── Backend/                    # Microservicios
 │   ├── quickbite-Auth-main/
 │   ├── quickbite-ms-inventario/
@@ -77,11 +63,15 @@ QuickBite/
 │   ├── quickbite-payment-service/
 │   ├── quickbite-kitchen-service/
 │   └── quickbite-ms-notificaciones/
-├── docker-compose.yml          # Orquestación de contenedores
+├── backend/                    # Gateway y Discovery
+│   ├── api-gateway/           # API Gateway
+│   └── eureka-server/         # Service Discovery
+├── START.bat                   # Script de inicio
+├── STOP.bat                    # Script de detención
 └── README.md
 ```
 
-## 🔧 Tecnologías
+## �️ Tecnologías
 
 ### Frontend
 - **React 18** - Framework principal
@@ -99,9 +89,8 @@ QuickBite/
 - **Eureka** - Service Discovery
 
 ### Infraestructura
-- **Docker** - Contenerización
-- **Docker Compose** - Orquestación
 - **API Gateway** - Enrutamiento
+- **Service Discovery** - Descubrimiento de servicios
 
 ## 📋 Funcionalidades
 
@@ -147,23 +136,13 @@ QuickBite/
 
 ## 🛠️ Desarrollo Local
 
-### Frontend
+### Para detener los servicios
 ```bash
-cd frontend
-npm install
-npm start
+STOP.bat
 ```
 
-### Backend (individual)
-```bash
-cd Backend/<nombre-servicio>
-mvn spring-boot:run
-```
-
-## 📊 Monitoreo
-
+### Monitoreo
 - **Eureka Dashboard**: http://localhost:8761
-- **Logs**: `docker-compose logs -f [servicio]`
 
 ## 🔒 Seguridad
 
