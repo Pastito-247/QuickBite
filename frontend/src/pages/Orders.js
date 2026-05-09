@@ -67,7 +67,7 @@ const Orders = () => {
       case 'pending':
         return <Clock className="h-5 w-5 text-yellow-500" />;
       case 'preparing':
-        return <Package className="h-5 w-5 text-blue-500" />;
+        return <Package className="h-5 w-5 text-primary-500" />;
       case 'ready':
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'delivered':
@@ -99,7 +99,7 @@ const Orders = () => {
       case 'preparing':
         return 'bg-blue-100 text-blue-800';
       case 'ready':
-        return 'bg-green-100 text-green-800';
+        return 'bg-accent-100 text-accent-800';
       case 'delivered':
         return 'bg-gray-100 text-gray-800';
       default:
@@ -125,7 +125,7 @@ const Orders = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -133,10 +133,10 @@ const Orders = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Mis Pedidos</h1>
+        <h1 className="text-3xl font-bold text-secondary-900">Mis Pedidos</h1>
         <button
           onClick={refreshOrders}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-600 transition-colors"
         >
           <RefreshCw className="h-4 w-4 mr-2" />
           Actualizar
@@ -150,7 +150,7 @@ const Orders = () => {
           <p className="text-gray-500 mb-6">¡Haz tu primer pedido en nuestro menú!</p>
           <a
             href="/menu"
-            className="inline-block px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            className="inline-block px-6 py-3 bg-primary text-white rounded-md hover:bg-primary-600 transition-colors"
           >
             Ver Menú
           </a>
@@ -167,7 +167,7 @@ const Orders = () => {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{order.id}</h3>
+                    <h3 className="text-lg font-semibold text-secondary-900">{order.id}</h3>
                     <p className="text-sm text-gray-600">{formatTime(order.createdAt)}</p>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -183,11 +183,11 @@ const Orders = () => {
                     <p className="text-sm text-gray-600">
                       {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
                     </p>
-                    <p className="text-lg font-semibold text-gray-900">
+                    <p className="text-lg font-semibold text-secondary-900">
                       ${order.total.toLocaleString('es-CL')}
                     </p>
                   </div>
-                  <button className="flex items-center text-blue-600 hover:text-blue-800">
+                  <button className="flex items-center text-primary hover:text-blue-800">
                     <Eye className="h-4 w-4 mr-1" />
                     Ver detalles
                   </button>
@@ -217,7 +217,7 @@ const Orders = () => {
           <div className="lg:col-span-1">
             {selectedOrder ? (
               <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                <h2 className="text-xl font-semibold text-secondary-900 mb-4">
                   Detalles del Pedido
                 </h2>
                 
@@ -232,10 +232,10 @@ const Orders = () => {
                   {selectedOrder.items.map((item, index) => (
                     <div key={index} className="flex justify-between py-2 border-b">
                       <div>
-                        <p className="font-medium text-gray-900">{item.name}</p>
+                        <p className="font-medium text-secondary-900">{item.name}</p>
                         <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
                       </div>
-                      <p className="font-medium text-gray-900">
+                      <p className="font-medium text-secondary-900">
                         ${(item.price * item.quantity).toLocaleString('es-CL')}
                       </p>
                     </div>
@@ -255,7 +255,7 @@ const Orders = () => {
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t">
                     <span className="text-lg font-semibold">Total:</span>
-                    <span className="text-xl font-bold text-blue-600">
+                    <span className="text-xl font-bold text-primary">
                       ${selectedOrder.total.toLocaleString('es-CL')}
                     </span>
                   </div>

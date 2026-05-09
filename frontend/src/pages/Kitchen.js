@@ -144,7 +144,7 @@ const Kitchen = () => {
       case 'preparing':
         return 'bg-blue-100 text-blue-800 border-blue-300';
       case 'ready':
-        return 'bg-green-100 text-green-800 border-green-300';
+        return 'bg-accent-100 text-accent-800 border-green-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
@@ -179,7 +179,7 @@ const Kitchen = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -188,7 +188,7 @@ const Kitchen = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header con estadísticas */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Kitchen Display System</h1>
+        <h1 className="text-3xl font-bold text-secondary-900 mb-6">Kitchen Display System</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -204,10 +204,10 @@ const Kitchen = () => {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-blue-600 font-medium">Preparando</p>
+                <p className="text-sm text-primary font-medium">Preparando</p>
                 <p className="text-2xl font-bold text-blue-700">{stats.preparing}</p>
               </div>
-              <ChefHat className="h-8 w-8 text-blue-500" />
+              <ChefHat className="h-8 w-8 text-primary-500" />
             </div>
           </div>
           
@@ -237,7 +237,7 @@ const Kitchen = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Pendientes */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <h2 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center">
             <Clock className="h-5 w-5 mr-2 text-yellow-500" />
             Pendientes ({orders.filter(o => o.status === 'pending').length})
           </h2>
@@ -247,7 +247,7 @@ const Kitchen = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-semibold text-gray-900">{order.id}</h3>
+                      <h3 className="font-semibold text-secondary-900">{order.id}</h3>
                       <span className={`w-2 h-2 rounded-full ${getPriorityColor(order.priority)}`}></span>
                     </div>
                     <p className="text-sm text-gray-600">Mesa: {order.tableNumber}</p>
@@ -273,7 +273,7 @@ const Kitchen = () => {
 
                 <button
                   onClick={() => updateOrderStatus(order.id, 'preparing')}
-                  className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition-colors"
+                  className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-600 transition-colors"
                 >
                   Comenzar Preparación
                 </button>
@@ -284,8 +284,8 @@ const Kitchen = () => {
 
         {/* Columna En Preparación */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <ChefHat className="h-5 w-5 mr-2 text-blue-500" />
+          <h2 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center">
+            <ChefHat className="h-5 w-5 mr-2 text-primary-500" />
             En Preparación ({orders.filter(o => o.status === 'preparing').length})
           </h2>
           <div className="space-y-4">
@@ -294,7 +294,7 @@ const Kitchen = () => {
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-semibold text-gray-900">{order.id}</h3>
+                      <h3 className="font-semibold text-secondary-900">{order.id}</h3>
                       <span className={`w-2 h-2 rounded-full ${getPriorityColor(order.priority)}`}></span>
                     </div>
                     <p className="text-sm text-gray-600">Mesa: {order.tableNumber}</p>
@@ -333,7 +333,7 @@ const Kitchen = () => {
 
         {/* Columna Listos */}
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <h2 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center">
             <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
             Listos para Entregar ({orders.filter(o => o.status === 'ready').length})
           </h2>
@@ -342,7 +342,7 @@ const Kitchen = () => {
               <div key={order.id} className={`kitchen-order ${getStatusColor(order.status)} border-l-4`}>
                 <div className="flex justify-between items-start mb-3">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{order.id}</h3>
+                    <h3 className="font-semibold text-secondary-900">{order.id}</h3>
                     <p className="text-sm text-gray-600">Mesa: {order.tableNumber}</p>
                     <p className="text-sm text-gray-600">Listo: {formatTime(order.completedAt)}</p>
                   </div>
@@ -363,7 +363,7 @@ const Kitchen = () => {
                   </div>
                 </div>
 
-                <div className="bg-green-100 text-green-800 p-2 rounded-md text-center text-sm">
+                <div className="bg-accent-100 text-accent-800 p-2 rounded-md text-center text-sm">
                   ✅ Pedido listo para entrega
                 </div>
               </div>

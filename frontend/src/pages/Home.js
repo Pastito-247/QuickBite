@@ -44,13 +44,13 @@ const Home = () => {
             <div className="space-x-4">
               <Link
                 to="/menu"
-                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
+                className="bg-white text-primary px-8 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
               >
                 Ver Menú
               </Link>
               <Link
                 to="/orders"
-                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors"
+                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary transition-colors"
               >
                 Mis Pedidos
               </Link>
@@ -63,23 +63,23 @@ const Home = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white rounded-lg shadow-lg p-6 text-center">
-            <Clock className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900">{stats.activeOrders}</h3>
+            <Clock className="h-12 w-12 text-primary mx-auto mb-4" />
+            <h3 className="text-2xl font-bold text-secondary-900">{stats.activeOrders}</h3>
             <p className="text-gray-600">Pedidos Activos</p>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6 text-center">
             <Users className="h-12 w-12 text-green-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900">{stats.totalCustomers}</h3>
+            <h3 className="text-2xl font-bold text-secondary-900">{stats.totalCustomers}</h3>
             <p className="text-gray-600">Clientes Totales</p>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6 text-center">
             <ChefHat className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900">{stats.chefsOnline}</h3>
+            <h3 className="text-2xl font-bold text-secondary-900">{stats.chefsOnline}</h3>
             <p className="text-gray-600">Cocineros Online</p>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6 text-center">
             <Star className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
-            <h3 className="text-2xl font-bold text-gray-900">{stats.avgRating}</h3>
+            <h3 className="text-2xl font-bold text-secondary-900">{stats.avgRating}</h3>
             <p className="text-gray-600">Calificación Promedio</p>
           </div>
         </div>
@@ -87,13 +87,13 @@ const Home = () => {
 
       {/* Features Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+        <h2 className="text-3xl font-bold text-center text-secondary-900 mb-12">
           Características Principales
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="text-center">
             <div className="bg-blue-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-              <Clock className="h-8 w-8 text-blue-600" />
+              <Clock className="h-8 w-8 text-primary" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Pedidos en Tiempo Real</h3>
             <p className="text-gray-600">
@@ -102,7 +102,7 @@ const Home = () => {
             </p>
           </div>
           <div className="text-center">
-            <div className="bg-green-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <div className="bg-accent-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
               <Users className="h-8 w-8 text-green-600" />
             </div>
             <h3 className="text-xl font-semibold mb-2">Gestión de Inventario</h3>
@@ -135,7 +135,7 @@ const Home = () => {
           </p>
           <Link
             to="/menu"
-            className="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+            className="bg-primary text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors"
           >
             Comenzar Ahora
           </Link>
