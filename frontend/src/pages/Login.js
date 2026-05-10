@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { ChefHat, Eye, EyeOff, User, Lock } from 'lucide-react';
+import { ChefHat, Eye, EyeOff, User, Lock, Store } from 'lucide-react';
+import QuickBiteLogo from '../components/QuickBiteLogo';
 
 const Login = () => {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -16,6 +17,18 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    if (location.state) {
+      if (location.state.isRegistering !== undefined) {
+        setIsRegistering(location.state.isRegistering);
+      }
+      if (location.state.defaultRole) {
+        setFormData(prev => ({ ...prev, role: location.state.defaultRole }));
+      }
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     setFormData({
@@ -86,14 +99,22 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="flex justify-center">
-            <ChefHat className="h-16 w-16 text-primary" />
+          <div className="flex justify-center transition-all duration-300">
+            {isRegistering && formData.role === 'ADMIN' ? (
+              <Store className="h-16 w-16 text-primary" />
+            ) : (
+              <QuickBiteLogo iconSize="h-16 w-16" speedLineSize="h-12 w-12" />
+            )}
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-secondary-900">
-            QuickBite
+            {isRegistering 
+              ? (formData.role === 'ADMIN' ? 'Registro de Restaurante' : 'Registro de Cliente') 
+              : 'QuickBite'}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sistema de Gestión de Restaurantes
+            {isRegistering 
+              ? (formData.role === 'ADMIN' ? 'Gestiona tu restaurante y aumenta tus ventas' : 'Pide tu comida favorita en minutos') 
+              : 'Sistema de Gestión de Restaurantes'}
           </p>
         </div>
 
@@ -110,7 +131,7 @@ const Login = () => {
               onClick={() => setIsRegistering(true)}
               className={`px-4 py-2 font-medium ${isRegistering ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
             >
-              Registrarse
+              {formData.role === 'ADMIN' ? 'Registrar Restaurante' : 'Registrarse'}
             </button>
           </div>
 
@@ -156,21 +177,7 @@ const Login = () => {
               </>
             )}
 
-            {isRegistering && (
-              <div>
-                <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                  Rol Solicitado
-                </label>
-                <select
-                  id="role" name="role" value={formData.role} onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
-                >
-                  <option value="CLIENT">Cliente</option>
-                  <option value="KITCHEN">Personal de Cocina</option>
-                  <option value="ADMIN">Administrador</option>
-                </select>
-              </div>
-            )}
+
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Clock, CheckCircle, AlertCircle, ChefHat, Timer, Users } from 'lucide-react';
+import { Clock, CheckCircle, AlertCircle, ChefHat, Timer, Users, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import QuickBiteLogo from '../components/QuickBiteLogo';
 
 const Kitchen = () => {
   const [orders, setOrders] = useState([]);
@@ -11,6 +13,15 @@ const Kitchen = () => {
     ready: 0,
     completedToday: 0
   });
+
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
+    navigate('/');
+  };
 
   useEffect(() => {
     loadOrders();
@@ -132,6 +143,8 @@ const Kitchen = () => {
         return 'En preparación';
       case 'ready':
         return 'Listo para entregar';
+      case 'delivered':
+        return 'Entregado al cliente 🎉';
       default:
         return 'Desconocido';
     }
@@ -140,13 +153,13 @@ const Kitchen = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+        return 'bg-white text-gray-800 border-yellow-400 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1';
       case 'preparing':
-        return 'bg-blue-100 text-blue-800 border-blue-300';
+        return 'bg-white text-gray-800 border-orange-500 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1';
       case 'ready':
-        return 'bg-accent-100 text-accent-800 border-green-300';
+        return 'bg-white text-gray-800 border-green-500 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-1';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300';
+        return 'bg-white text-gray-800 border-gray-300 shadow-md';
     }
   };
 
@@ -185,10 +198,30 @@ const Kitchen = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      {/* Header con estadísticas */}
+    <div className="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8 py-6 min-h-screen">
+      {/* Header con estadísticas y Logo */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-secondary-900 mb-6">Kitchen Display System</h1>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 bg-gradient-to-r from-orange-500 to-red-500 p-6 rounded-2xl shadow-lg text-white">
+          <div className="flex items-center space-x-4 mb-4 md:mb-0">
+            <QuickBiteLogo iconSize="h-14 w-14" speedLineSize="h-10 w-10" color="text-white" />
+            <div>
+              <h1 className="text-3xl font-extrabold leading-tight tracking-tight">
+                QuickBite <span className="font-medium text-orange-200">| Panel de Cocina</span>
+              </h1>
+              <p className="text-orange-100 font-medium mt-1">¡A darle sabor al día! 🔥</p>
+            </div>
+          </div>
+          <div className="flex items-center space-x-4">
+            <button 
+              onClick={handleLogout}
+              className="flex items-center px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors font-bold shadow-sm"
+              title="Cerrar sesión"
+            >
+              <LogOut className="h-5 w-5 mr-2" />
+              <span>Salir del Turno</span>
+            </button>
+          </div>
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -201,13 +234,15 @@ const Kitchen = () => {
             </div>
           </div>
           
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-primary font-medium">Preparando</p>
-                <p className="text-2xl font-bold text-blue-700">{stats.preparing}</p>
+                <p className="text-sm text-orange-600 font-bold uppercase tracking-wider">Preparando</p>
+                <p className="text-3xl font-extrabold text-orange-700 mt-1">{stats.preparing}</p>
               </div>
-              <ChefHat className="h-8 w-8 text-primary-500" />
+              <div className="bg-orange-100 p-3 rounded-full">
+                <ChefHat className="h-8 w-8 text-orange-600" />
+              </div>
             </div>
           </div>
           
@@ -236,10 +271,10 @@ const Kitchen = () => {
       {/* Lista de órdenes */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Columna Pendientes */}
-        <div>
-          <h2 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center">
-            <Clock className="h-5 w-5 mr-2 text-yellow-500" />
-            Pendientes ({orders.filter(o => o.status === 'pending').length})
+        <div className="bg-yellow-50/50 p-4 rounded-2xl border border-yellow-100 shadow-sm">
+          <h2 className="text-xl font-bold text-yellow-800 mb-4 flex items-center bg-yellow-100 p-3 rounded-xl">
+            <Clock className="h-6 w-6 mr-2 text-yellow-600" />
+            Nuevos Pedidos <span className="ml-2 bg-yellow-500 text-white px-2 py-0.5 rounded-full text-sm">{orders.filter(o => o.status === 'pending').length}</span>
           </h2>
           <div className="space-y-4">
             {orders.filter(order => order.status === 'pending').map(order => (
@@ -273,9 +308,10 @@ const Kitchen = () => {
 
                 <button
                   onClick={() => updateOrderStatus(order.id, 'preparing')}
-                  className="w-full bg-primary text-white py-2 rounded-md hover:bg-primary-600 transition-colors"
+                  className="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg hover:bg-yellow-600 transition-colors shadow-sm text-lg flex items-center justify-center"
                 >
-                  Comenzar Preparación
+                  <ChefHat className="h-5 w-5 mr-2" />
+                  ¡A Cocinar!
                 </button>
               </div>
             ))}
@@ -283,10 +319,10 @@ const Kitchen = () => {
         </div>
 
         {/* Columna En Preparación */}
-        <div>
-          <h2 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center">
-            <ChefHat className="h-5 w-5 mr-2 text-primary-500" />
-            En Preparación ({orders.filter(o => o.status === 'preparing').length})
+        <div className="bg-orange-50/50 p-4 rounded-2xl border border-orange-100 shadow-sm">
+          <h2 className="text-xl font-bold text-orange-800 mb-4 flex items-center bg-orange-100 p-3 rounded-xl">
+            <ChefHat className="h-6 w-6 mr-2 text-orange-600" />
+            En Preparación <span className="ml-2 bg-orange-500 text-white px-2 py-0.5 rounded-full text-sm">{orders.filter(o => o.status === 'preparing').length}</span>
           </h2>
           <div className="space-y-4">
             {orders.filter(order => order.status === 'preparing').map(order => (
@@ -322,9 +358,10 @@ const Kitchen = () => {
 
                 <button
                   onClick={() => updateOrderStatus(order.id, 'ready')}
-                  className="w-full bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition-colors"
+                  className="w-full bg-orange-500 text-white font-bold py-3 rounded-lg hover:bg-orange-600 transition-colors shadow-sm text-lg flex items-center justify-center"
                 >
-                  Marcar como Listo
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  ¡Está Listo!
                 </button>
               </div>
             ))}
@@ -332,10 +369,10 @@ const Kitchen = () => {
         </div>
 
         {/* Columna Listos */}
-        <div>
-          <h2 className="text-lg font-semibold text-secondary-900 mb-4 flex items-center">
-            <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-            Listos para Entregar ({orders.filter(o => o.status === 'ready').length})
+        <div className="bg-green-50/50 p-4 rounded-2xl border border-green-100 shadow-sm">
+          <h2 className="text-xl font-bold text-green-800 mb-4 flex items-center bg-green-100 p-3 rounded-xl">
+            <CheckCircle className="h-6 w-6 mr-2 text-green-600" />
+            Listos para Entregar <span className="ml-2 bg-green-500 text-white px-2 py-0.5 rounded-full text-sm">{orders.filter(o => o.status === 'ready').length}</span>
           </h2>
           <div className="space-y-4">
             {orders.filter(order => order.status === 'ready').map(order => (
@@ -363,9 +400,13 @@ const Kitchen = () => {
                   </div>
                 </div>
 
-                <div className="bg-accent-100 text-accent-800 p-2 rounded-md text-center text-sm">
-                  ✅ Pedido listo para entrega
-                </div>
+                <button
+                  onClick={() => updateOrderStatus(order.id, 'delivered')}
+                  className="w-full mt-2 bg-gradient-to-r from-green-400 to-green-600 text-white font-extrabold py-3 rounded-xl hover:from-green-500 hover:to-green-700 transition-all transform hover:scale-105 shadow-lg text-lg flex items-center justify-center animate-pulse border-2 border-green-300"
+                >
+                  <span className="text-2xl mr-2">🏃‍♂️💨</span>
+                  ¡Entregar al Cliente!
+                </button>
               </div>
             ))}
           </div>
