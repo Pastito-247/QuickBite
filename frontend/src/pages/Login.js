@@ -138,6 +138,31 @@ const Login = () => {
           <form className="space-y-6" onSubmit={handleSubmit}>
             {isRegistering && (
               <>
+                <div className="flex justify-center space-x-4 mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: 'CLIENT' })}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.role === 'CLIENT'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Soy Cliente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: 'ADMIN' })}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.role === 'ADMIN'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Soy Dueño / Restaurante
+                  </button>
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">

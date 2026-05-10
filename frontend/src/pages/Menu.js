@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Plus, Minus, ShoppingCart, Clock, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Menu = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadMenuItems();
@@ -102,8 +104,34 @@ const Menu = () => {
       toast.error('El carrito está vacío');
       return;
     }
-    // Aquí iría la lógica para procesar el pedido
-    toast.success('Procesando pedido...');
+
+    // Lógica para guardar el pedido simulado en localStorage
+    const existingOrders = JSON.parse(localStorage.getItem('mockClientOrders') || '[]');
+    
+    // Si es el primer pedido, pedimos confirmación
+    if (existingOrders.length === 0) {
+      const confirmFirstOrder = window.confirm(
+        '¡Es tu primer pedido!\n\nConfirmaremos que enviaremos tu comida a tu dirección principal guardada (Av. Providencia 1234, Depto 502, Santiago). ¿Deseas continuar?'
+      );
+      if (!confirmFirstOrder) return;
+    }
+
+    const newOrder = {
+      id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+      items: cart,
+      total: getTotalPrice(),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      estimatedTime: 25, // Mock time
+      trackingNumber: `TRK-${Math.floor(100000 + Math.random() * 900000)}`
+    };
+
+    const updatedOrders = [newOrder, ...existingOrders];
+    localStorage.setItem('mockClientOrders', JSON.stringify(updatedOrders));
+    
+    setCart([]);
+    toast.success('¡Pedido procesado con éxito!');
+    navigate('/orders');
   };
 
   const categories = [...new Set(menuItems.map(item => item.category))];

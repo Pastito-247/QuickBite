@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Clock, CheckCircle, Truck, Package, Eye, RefreshCw } from 'lucide-react';
+import { Clock, CheckCircle, Truck, Package, Eye, RefreshCw, XCircle, Trash2 } from 'lucide-react';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [activeTab, setActiveTab] = useState('active'); // 'active' | 'history'
 
   useEffect(() => {
     loadOrders();
@@ -16,49 +17,77 @@ const Orders = () => {
 
   const loadOrders = async () => {
     try {
-      // Simulación de datos - reemplazar con llamada a API real
-      const mockData = [
-        {
-          id: "ORD-001",
-          items: [
-            { name: "Hamburguesa Clásica", quantity: 2, price: 8990 },
-            { name: "Papas Fritas Grandes", quantity: 1, price: 3990 }
-          ],
-          total: 21970,
-          status: "preparing",
-          createdAt: "2026-05-05T15:30:00Z",
-          estimatedTime: 20,
-          trackingNumber: "TRK-123456"
-        },
-        {
-          id: "ORD-002",
-          items: [
-            { name: "Combo Big Bite", quantity: 1, price: 12990 }
-          ],
-          total: 12990,
-          status: "ready",
-          createdAt: "2026-05-05T15:15:00Z",
-          estimatedTime: 5,
-          trackingNumber: "TRK-123457"
-        },
-        {
-          id: "ORD-003",
-          items: [
-            { name: "Hamburguesa Clásica", quantity: 1, price: 8990 },
-            { name: "Ensalada César", quantity: 1, price: 6990 }
-          ],
-          total: 15980,
-          status: "delivered",
-          createdAt: "2026-05-05T14:45:00Z",
-          estimatedTime: 0,
-          trackingNumber: "TRK-123458"
-        }
-      ];
-      setOrders(mockData);
+      const storedOrders = JSON.parse(localStorage.getItem('mockClientOrders') || '[]');
+      
+      // Si no hay pedidos en localStorage, inicializamos con algunos de prueba
+      if (storedOrders.length === 0) {
+        const mockData = [
+          {
+            id: "ORD-001",
+            items: [
+              { name: "Hamburguesa Clásica", quantity: 2, price: 8990 },
+              { name: "Papas Fritas Grandes", quantity: 1, price: 3990 }
+            ],
+            total: 21970,
+            status: "preparing",
+            createdAt: new Date().toISOString(),
+            estimatedTime: 20,
+            trackingNumber: "TRK-123456"
+          },
+          {
+            id: "ORD-002",
+            items: [
+              { name: "Combo Big Bite", quantity: 1, price: 12990 }
+            ],
+            total: 12990,
+            status: "ready",
+            createdAt: new Date(Date.now() - 3600000).toISOString(),
+            estimatedTime: 5,
+            trackingNumber: "TRK-123457"
+          },
+          {
+            id: "ORD-003",
+            items: [
+              { name: "Ensalada César", quantity: 1, price: 6990 }
+            ],
+            total: 6990,
+            status: "delivered",
+            createdAt: new Date(Date.now() - 86400000).toISOString(),
+            estimatedTime: 0,
+            trackingNumber: "TRK-123458"
+          }
+        ];
+        localStorage.setItem('mockClientOrders', JSON.stringify(mockData));
+        setOrders(mockData);
+      } else {
+        setOrders(storedOrders);
+      }
       setLoading(false);
     } catch (error) {
       toast.error('Error al cargar los pedidos');
       setLoading(false);
+    }
+  };
+
+  const cancelOrder = (orderId) => {
+    if (window.confirm('¿Estás seguro de que quieres cancelar este pedido?')) {
+      const updatedOrders = orders.map(order => 
+        order.id === orderId ? { ...order, status: 'cancelled' } : order
+      );
+      setOrders(updatedOrders);
+      localStorage.setItem('mockClientOrders', JSON.stringify(updatedOrders));
+      toast.success('Pedido cancelado exitosamente');
+      if (selectedOrder && selectedOrder.id === orderId) setSelectedOrder(null);
+    }
+  };
+
+  const deleteOrder = (orderId) => {
+    if (window.confirm('¿Quieres eliminar este pedido del historial?')) {
+      const updatedOrders = orders.filter(order => order.id !== orderId);
+      setOrders(updatedOrders);
+      localStorage.setItem('mockClientOrders', JSON.stringify(updatedOrders));
+      toast.info('Pedido eliminado del historial');
+      if (selectedOrder && selectedOrder.id === orderId) setSelectedOrder(null);
     }
   };
 
@@ -72,6 +101,8 @@ const Orders = () => {
         return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'delivered':
         return <Truck className="h-5 w-5 text-gray-500" />;
+      case 'cancelled':
+        return <XCircle className="h-5 w-5 text-red-500" />;
       default:
         return <Clock className="h-5 w-5 text-gray-400" />;
     }
@@ -87,6 +118,8 @@ const Orders = () => {
         return 'Listo para entrega';
       case 'delivered':
         return 'Entregado';
+      case 'cancelled':
+        return 'Cancelado';
       default:
         return 'Desconocido';
     }
@@ -102,6 +135,8 @@ const Orders = () => {
         return 'bg-accent-100 text-accent-800';
       case 'delivered':
         return 'bg-gray-100 text-gray-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -130,24 +165,44 @@ const Orders = () => {
     );
   }
 
+  const displayedOrders = orders.filter(order => 
+    activeTab === 'active' 
+      ? ['pending', 'preparing', 'ready'].includes(order.status)
+      : ['delivered', 'cancelled'].includes(order.status)
+  );
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
         <h1 className="text-3xl font-bold text-secondary-900">Mis Pedidos</h1>
-        <button
-          onClick={refreshOrders}
-          className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-600 transition-colors"
-        >
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Actualizar
-        </button>
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={() => {setActiveTab('active'); setSelectedOrder(null);}}
+            className={`px-4 py-2 font-medium transition-colors ${activeTab === 'active' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
+          >
+            Pedidos Activos
+          </button>
+          <button
+            onClick={() => {setActiveTab('history'); setSelectedOrder(null);}}
+            className={`px-4 py-2 font-medium transition-colors ${activeTab === 'history' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
+          >
+            Historial
+          </button>
+          <button
+            onClick={refreshOrders}
+            className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Actualizar
+          </button>
+        </div>
       </div>
 
-      {orders.length === 0 ? (
+      {displayedOrders.length === 0 ? (
         <div className="text-center py-12">
           <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-600 mb-2">No tienes pedidos</h2>
-          <p className="text-gray-500 mb-6">¡Haz tu primer pedido en nuestro menú!</p>
+          <h2 className="text-xl font-semibold text-gray-600 mb-2">No hay pedidos {activeTab === 'active' ? 'activos' : 'en el historial'}</h2>
+          {activeTab === 'active' && <p className="text-gray-500 mb-6">¡Haz tu primer pedido en nuestro menú!</p>}
           <a
             href="/menu"
             className="inline-block px-6 py-3 bg-primary text-white rounded-md hover:bg-primary-600 transition-colors"
@@ -159,7 +214,7 @@ const Orders = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Orders List */}
           <div className="lg:col-span-2 space-y-4">
-            {orders.map(order => (
+            {displayedOrders.map(order => (
               <div
                 key={order.id}
                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
@@ -209,6 +264,26 @@ const Orders = () => {
                     Seguimiento: <span className="font-medium">{order.trackingNumber}</span>
                   </div>
                 )}
+                
+                <div className="mt-4 flex justify-end space-x-2">
+                  {order.status === 'pending' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); cancelOrder(order.id); }}
+                      className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
+                    >
+                      Cancelar Pedido
+                    </button>
+                  )}
+                  {['delivered', 'cancelled'].includes(order.status) && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }}
+                      className="px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors flex items-center"
+                    >
+                      <Trash2 className="h-4 w-4 mr-1" />
+                      Eliminar
+                    </button>
+                  )}
+                </div>
               </div>
             ))}
           </div>

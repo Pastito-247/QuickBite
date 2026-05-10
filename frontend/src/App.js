@@ -14,6 +14,7 @@ import Orders from './pages/Orders';
 import Kitchen from './pages/Kitchen';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
             <Route path="/kitchen" element={<Kitchen />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
         <ToastContainer

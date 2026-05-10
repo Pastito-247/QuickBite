@@ -10,7 +10,16 @@ const NotificationBadge = () => {
   const fetchNotifications = async () => {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
+    const userRole = localStorage.getItem('userRole');
     
+    if (userRole === 'CLIENT') {
+      setNotifications([
+        { id: 'mock-1', tipo: 'PROMOCION', mensaje: '¡20% de descuento en Hamburguesas solo por hoy!', fechaCreacion: new Date().toISOString() },
+        { id: 'mock-2', tipo: 'PEDIDO_ENTREGADO', mensaje: 'Tu pedido anterior ha sido entregado exitosamente. ¡Que lo disfrutes!', fechaCreacion: new Date(Date.now() - 86400000).toISOString() }
+      ]);
+      return;
+    }
+
     if (!token || !userId) return;
 
     try {
@@ -63,6 +72,7 @@ const NotificationBadge = () => {
       case 'PEDIDO_PREPARACION': return '👨‍🍳';
       case 'PEDIDO_LISTO': return '✅';
       case 'PEDIDO_ENTREGADO': return '🚚';
+      case 'PROMOCION': return '🎉';
       default: return '🔔';
     }
   };

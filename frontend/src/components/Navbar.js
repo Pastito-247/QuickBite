@@ -1,7 +1,9 @@
 import React from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, ChefHat, Users, LogOut, ChevronDown } from 'lucide-react';
+import { ShoppingCart, ChefHat, Users, LogOut, ChevronDown, User } from 'lucide-react';
 import QuickBiteLogo from './QuickBiteLogo';
+import NotificationBadge from './NotificationBadge';
+import { toast } from 'react-toastify';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -36,8 +38,9 @@ const Navbar = () => {
       },
     ];
 
-    if (userRole === 'CLIENT') {
-      baseLinks.push({ path: '/orders', label: 'Mis Pedidos', icon: ShoppingCart });
+    if (!userRole || userRole === 'CLIENT') {
+      baseLinks.push({ path: '/orders', label: 'Mis Pedidos', icon: ShoppingCart, requiresAuth: true });
+      baseLinks.push({ path: '/profile', label: 'Mi Perfil', icon: User, requiresAuth: true });
     }
 
     if (userRole === 'KITCHEN') {
@@ -65,11 +68,20 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            {getNavLinks().map((link) => (
-              link.dropdown ? (
+            {getNavLinks().map((link) => {
+              const handleProtectedClick = (e) => {
+                if (link.requiresAuth && !userRole) {
+                  e.preventDefault();
+                  toast.info('Debes iniciar sesión para acceder a esta sección');
+                  navigate('/login');
+                }
+              };
+
+              return link.dropdown ? (
                 <div key={link.label} className="relative group">
                   <Link
                     to={link.path}
+                    onClick={handleProtectedClick}
                     className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary hover:bg-orange-50 transition-colors"
                   >
                     {link.icon && <link.icon className="h-4 w-4 mr-2" />}
@@ -92,20 +104,38 @@ const Navbar = () => {
                 <Link
                   key={link.label}
                   to={link.path}
+                  onClick={handleProtectedClick}
                   className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary hover:bg-orange-50 transition-colors"
                 >
                   {link.icon && <link.icon className="h-4 w-4 mr-2" />}
                   {link.label}
                 </Link>
-              )
-            ))}
+              );
+            })}
           </div>
 
           <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-500 font-medium">
+            {(!userRole || userRole === 'CLIENT') && (
+              <button 
+                onClick={() => {
+                  if (!userRole) {
+                    toast.info('Debes iniciar sesión para usar el carrito');
+                    navigate('/login');
+                  } else {
+                    navigate('/menu');
+                  }
+                }}
+                className="p-2 text-gray-500 hover:text-primary transition-colors" 
+                title="Ver Carrito"
+              >
+                <ShoppingCart className="h-6 w-6" />
+              </button>
+            )}
+            <span className="text-sm text-gray-500 font-medium hidden sm:block">
               {userRole ? `Rol: ${userRole === 'CLIENT' ? 'Cliente' : 
                     userRole === 'KITCHEN' ? 'Cocina' : 'Administrador'}` : ''}
             </span>
+            {userRole && <NotificationBadge />}
             {userRole ? (
               <button
                 onClick={handleLogout}
@@ -129,30 +159,41 @@ const Navbar = () => {
       {/* Mobile menu */}
       <div className="md:hidden">
         <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-          {getNavLinks().map((link) => (
-            <React.Fragment key={link.label}>
-              <Link
-                to={link.path}
-                className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-orange-50"
-              >
-                {link.icon && <link.icon className="h-4 w-4 mr-2" />}
-                {link.label}
-              </Link>
-              {link.dropdown && (
-                <div className="pl-6 space-y-1">
-                  {link.dropdown.map(drop => (
-                    <Link
-                      key={drop.label}
-                      to={drop.path}
-                      className="block px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50"
-                    >
-                      - {drop.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </React.Fragment>
-          ))}
+          {getNavLinks().map((link) => {
+            const handleProtectedClick = (e) => {
+              if (link.requiresAuth && !userRole) {
+                e.preventDefault();
+                toast.info('Debes iniciar sesión para acceder a esta sección');
+                navigate('/login');
+              }
+            };
+
+            return (
+              <React.Fragment key={link.label}>
+                <Link
+                  to={link.path}
+                  onClick={handleProtectedClick}
+                  className="flex items-center px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-primary hover:bg-orange-50"
+                >
+                  {link.icon && <link.icon className="h-4 w-4 mr-2" />}
+                  {link.label}
+                </Link>
+                {link.dropdown && (
+                  <div className="pl-6 space-y-1">
+                    {link.dropdown.map(drop => (
+                      <Link
+                        key={drop.label}
+                        to={drop.path}
+                        className="block px-3 py-2 rounded-md text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50"
+                      >
+                        - {drop.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </React.Fragment>
+            );
+          })}
         </div>
       </div>
     </nav>
