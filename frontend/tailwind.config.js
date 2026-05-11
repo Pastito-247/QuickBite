@@ -7,16 +7,40 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          50: '#eff6ff',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
+          DEFAULT: '#FF7A00',
+          50: '#fff3e0',
+          100: '#ffe0b2',
+          500: '#FF7A00',
+          600: '#e66e00',
+          700: '#cc6200',
+          800: '#a34e00',
         },
         secondary: {
-          50: '#f9fafb',
-          500: '#6b7280',
-          600: '#4b5563',
-        }
+          DEFAULT: '#2C3E50',
+          50: '#eef2f5',
+          100: '#dce4ec',
+          500: '#2C3E50',
+          600: '#34495e',
+          800: '#212f3d',
+          900: '#1a252f',
+        },
+        accent: {
+          DEFAULT: '#27AE60',
+          50: '#e9f7ef',
+          100: '#d4efdf',
+          500: '#27AE60',
+          600: '#229954',
+          800: '#1e8449',
+        },
+        alert: {
+          DEFAULT: '#E74C3C',
+          50: '#fdedec',
+          100: '#f9ebea',
+          500: '#E74C3C',
+          600: '#cb4335',
+          800: '#b03a2e',
+        },
+        appbg: '#F8F9FA'
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',

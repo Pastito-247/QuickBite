@@ -1,17 +1,34 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { ChefHat, Eye, EyeOff, User, Lock } from 'lucide-react';
+import { ChefHat, Eye, EyeOff, User, Lock, Store } from 'lucide-react';
+import QuickBiteLogo from '../components/QuickBiteLogo';
 
 const Login = () => {
+  const [isRegistering, setIsRegistering] = useState(false);
   const [formData, setFormData] = useState({
+    username: '',
     email: '',
     password: '',
-    role: 'customer'
+    firstName: '',
+    lastName: '',
+    role: 'CLIENT'
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    if (location.state) {
+      if (location.state.isRegistering !== undefined) {
+        setIsRegistering(location.state.isRegistering);
+      }
+      if (location.state.defaultRole) {
+        setFormData(prev => ({ ...prev, role: location.state.defaultRole }));
+      }
+    }
+  }, [location.state]);
 
   const handleChange = (e) => {
     setFormData({
@@ -25,40 +42,53 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Simulación de login - reemplazar con llamada a API real
-      const mockUsers = [
-        { email: 'admin@quickbite.com', password: 'admin123', role: 'admin', token: 'admin-token' },
-        { email: 'kitchen@quickbite.com', password: 'kitchen123', role: 'kitchen', token: 'kitchen-token' },
-        { email: 'customer@quickbite.com', password: 'customer123', role: 'customer', token: 'customer-token' }
-      ];
+      const url = isRegistering 
+        ? 'http://localhost:8081/api/v1/auth/register' 
+        : 'http://localhost:8081/api/v1/auth/authenticate';
 
-      const user = mockUsers.find(u => 
-        u.email === formData.email && 
-        u.password === formData.password && 
-        u.role === formData.role
-      );
+      const payload = isRegistering ? {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        role: formData.role
+      } : {
+        username: formData.email, // backend accepts email as username for login
+        password: formData.password
+      };
 
-      if (user) {
-        localStorage.setItem('token', user.token);
-        localStorage.setItem('userRole', user.role);
-        toast.success('¡Bienvenido a QuickBite!');
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('userRole', data.role);
+        
+        toast.success(isRegistering ? '¡Registro exitoso!' : '¡Bienvenido a QuickBite!');
         
         // Redirigir según el rol
-        switch (user.role) {
-          case 'admin':
+        switch (data.role) {
+          case 'ADMIN':
             navigate('/admin');
             break;
-          case 'kitchen':
+          case 'KITCHEN':
             navigate('/kitchen');
             break;
           default:
             navigate('/');
         }
       } else {
-        toast.error('Credenciales incorrectas');
+        const errorData = await response.json().catch(() => ({}));
+        toast.error(errorData.message || (isRegistering ? 'Error al registrarse' : 'Credenciales incorrectas'));
       }
     } catch (error) {
-      toast.error('Error al iniciar sesión');
+      toast.error('Error de red al conectar con el servidor');
     } finally {
       setLoading(false);
     }
@@ -69,35 +99,110 @@ const Login = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="flex justify-center">
-            <ChefHat className="h-16 w-16 text-blue-600" />
+          <div className="flex justify-center transition-all duration-300">
+            {isRegistering && formData.role === 'ADMIN' ? (
+              <Store className="h-16 w-16 text-primary" />
+            ) : (
+              <QuickBiteLogo iconSize="h-16 w-16" speedLineSize="h-12 w-12" />
+            )}
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            QuickBite
+          <h2 className="mt-6 text-3xl font-extrabold text-secondary-900">
+            {isRegistering 
+              ? (formData.role === 'ADMIN' ? 'Registro de Restaurante' : 'Registro de Cliente') 
+              : 'QuickBite'}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Sistema de Gestión de Restaurantes
+            {isRegistering 
+              ? (formData.role === 'ADMIN' ? 'Gestiona tu restaurante y aumenta tus ventas' : 'Pide tu comida favorita en minutos') 
+              : 'Sistema de Gestión de Restaurantes'}
           </p>
         </div>
 
         <div className="bg-white rounded-lg shadow-xl p-8">
+          
+          <div className="flex justify-center mb-6 border-b pb-4">
+            <button
+              onClick={() => setIsRegistering(false)}
+              className={`px-4 py-2 font-medium ${!isRegistering ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
+            >
+              Iniciar Sesión
+            </button>
+            <button
+              onClick={() => setIsRegistering(true)}
+              className={`px-4 py-2 font-medium ${isRegistering ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
+            >
+              {formData.role === 'ADMIN' ? 'Registrar Restaurante' : 'Registrarse'}
+            </button>
+          </div>
+
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                Tipo de Usuario
-              </label>
-              <select
-                id="role"
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="customer">Cliente</option>
-                <option value="kitchen">Personal de Cocina</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </div>
+            {isRegistering && (
+              <>
+                <div className="flex justify-center space-x-4 mb-6">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: 'CLIENT' })}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.role === 'CLIENT'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Soy Cliente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, role: 'ADMIN' })}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      formData.role === 'ADMIN'
+                        ? 'bg-primary text-white shadow-md'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    Soy Dueño / Restaurante
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre
+                    </label>
+                    <input
+                      id="firstName" name="firstName" type="text" required
+                      value={formData.firstName} onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                      placeholder="Juan"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
+                      Apellido
+                    </label>
+                    <input
+                      id="lastName" name="lastName" type="text"
+                      value={formData.lastName} onChange={handleChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                      placeholder="Pérez"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre de Usuario
+                  </label>
+                  <input
+                    id="username" name="username" type="text" required
+                    value={formData.username} onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+                    placeholder="juanp"
+                  />
+                </div>
+              </>
+            )}
+
+
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
@@ -108,13 +213,9 @@ const Login = () => {
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="email" name="email" type="email" required
+                  value={formData.email} onChange={handleChange}
+                  className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                   placeholder="correo@ejemplo.com"
                 />
               </div>
@@ -129,13 +230,9 @@ const Login = () => {
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="pl-10 pr-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  id="password" name="password" type={showPassword ? 'text' : 'password'} required
+                  value={formData.password} onChange={handleChange}
+                  className="pl-10 pr-10 w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
                   placeholder="••••••••"
                 />
                 <button
@@ -156,33 +253,32 @@ const Login = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
                   <div className="flex items-center">
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Iniciando sesión...
+                    {isRegistering ? 'Registrando...' : 'Iniciando sesión...'}
                   </div>
                 ) : (
-                  'Iniciar Sesión'
+                  isRegistering ? 'Registrarse' : 'Iniciar Sesión'
                 )}
               </button>
             </div>
           </form>
 
-          {/* Credenciales de prueba */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-md">
-            <p className="text-sm font-medium text-gray-700 mb-2">Credenciales de prueba:</p>
-            <div className="space-y-1 text-xs text-gray-600">
-              <p><strong>Admin:</strong> admin@quickbite.com / admin123</p>
-              <p><strong>Cocina:</strong> kitchen@quickbite.com / kitchen123</p>
-              <p><strong>Cliente:</strong> customer@quickbite.com / customer123</p>
+          {!isRegistering && (
+            <div className="mt-6 p-4 bg-gray-50 rounded-md">
+              <p className="text-sm font-medium text-gray-700 mb-2">Sugerencia:</p>
+              <div className="space-y-1 text-xs text-gray-600">
+                <p>Si es tu primera vez, usa la pestaña <strong>Registrarse</strong> para crear tu cuenta Admin.</p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="text-center text-sm text-gray-500">
-          <p>Selecciona el tipo de usuario y usa las credenciales correspondientes</p>
+          <p>{isRegistering ? 'Crea una cuenta para acceder a la plataforma' : 'Ingresa tus credenciales para continuar'}</p>
         </div>
       </div>
     </div>

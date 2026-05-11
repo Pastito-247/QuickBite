@@ -9,16 +9,7 @@
   color: white;
 }
 
-/* Navigation styles */
-nav {
-  background-color: #1f2937;
-  padding: 1rem;
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 1000;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+/* Navigation styles removed to prevent conflicts with Tailwind */
 
 .nav-container {
   max-width: 1200px;

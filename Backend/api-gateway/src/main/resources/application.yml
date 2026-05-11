@@ -28,8 +28,6 @@ spring:
           uri: lb://inventory-service
           predicates:
             - Path=/api/inventory/**
-          filters:
-            - StripPrefix=2
 
         # Order Service
         - id: order-service

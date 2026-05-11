@@ -10,8 +10,13 @@ import {
   Edit, 
   Trash2,
   DollarSign,
-  ChefHat
+  ChefHat,
+  X,
+  LogOut
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import NotificationBadge from '../components/NotificationBadge';
+import QuickBiteLogo from '../components/QuickBiteLogo';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -25,11 +30,34 @@ const Admin = () => {
   const [menu, setMenu] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Modal State for Inventory
+  const [isInventoryModalOpen, setIsInventoryModalOpen] = useState(false);
+  const [editingInventoryItem, setEditingInventoryItem] = useState(null);
+  const [inventoryFormData, setInventoryFormData] = useState({
+    name: '',
+    description: '',
+    unitCost: 0,
+    unitType: 'UNITS',
+    currentStock: 0,
+    minimumStock: 0,
+    maximumStock: 100
+  });
+
+  // Modal State for Menu
+  const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
+  const [editingMenuItem, setEditingMenuItem] = useState(null);
+  const [menuFormData, setMenuFormData] = useState({
+    name: '',
+    price: 0,
+    category: 'Hamburguesas',
+    available: true
+  });
+
+  const navigate = useNavigate();
+
   useEffect(() => {
     loadDashboardData();
-    if (activeTab === 'inventory') {
-      loadInventory();
-    }
+    loadInventory(); // Always load inventory so the dashboard has data
     if (activeTab === 'menu') {
       loadMenu();
     }
@@ -38,12 +66,12 @@ const Admin = () => {
   const loadDashboardData = async () => {
     try {
       // Simulación de datos
-      setStats({
+      setStats(prev => ({
+        ...prev,
         totalOrders: 156,
         totalRevenue: 2456780,
-        activeUsers: 89,
-        lowStockItems: 5
-      });
+        activeUsers: 89
+      }));
       setLoading(false);
     } catch (error) {
       toast.error('Error al cargar datos del dashboard');
@@ -53,21 +81,116 @@ const Admin = () => {
 
   const loadInventory = async () => {
     try {
-      // Simulación de datos de inventario
-      const mockInventory = [
-        { id: 1, name: 'Pan de hamburguesa', currentStock: 45, minStock: 50, unit: 'unidades', price: 250 },
-        { id: 2, name: 'Carne de res', currentStock: 12, minStock: 20, unit: 'kg', price: 8900 },
-        { id: 3, name: 'Lechuga', currentStock: 8, minStock: 10, unit: 'unidades', price: 800 },
-        { id: 4, name: 'Tomate', currentStock: 25, minStock: 15, unit: 'unidades', price: 600 },
-        { id: 5, name: 'Queso cheddar', currentStock: 3, minStock: 10, unit: 'kg', price: 12500 }
-      ];
-      setInventory(mockInventory);
+      const response = await fetch('http://localhost:8082/api/inventory/inventory');
+      if (response.ok) {
+        const data = await response.json();
+        setInventory(data);
+        const lowStockCount = data.filter(item => item.currentStock <= item.minimumStock).length;
+        setStats(prev => ({ ...prev, lowStockItems: lowStockCount }));
+      } else {
+        throw new Error('Server returned an error');
+      }
     } catch (error) {
-      toast.error('Error al cargar inventario');
+      toast.info('Usando datos de prueba para el inventario (Modo Offline)', { toastId: 'inventory-offline' });
+      const mockData = [
+        { id: 1, name: 'Pan de Hamburguesa', description: 'Pan brioche', currentStock: 45, minimumStock: 100, unitType: 'UNITS', unitCost: 150 },
+        { id: 2, name: 'Carne de Res Premium', description: 'Carne molida 80/20', currentStock: 25, minimumStock: 30, unitType: 'KILOGRAMS', unitCost: 8500 },
+        { id: 3, name: 'Queso Cheddar', description: 'Láminas de queso', currentStock: 15, minimumStock: 10, unitType: 'KILOGRAMS', unitCost: 6500 },
+        { id: 4, name: 'Tomate', description: 'Tomate fresco', currentStock: 8, minimumStock: 15, unitType: 'KILOGRAMS', unitCost: 1200 },
+        { id: 5, name: 'Lechuga', description: 'Lechuga escarola', currentStock: 5, minimumStock: 10, unitType: 'UNITS', unitCost: 800 },
+      ];
+      setInventory(mockData);
+      const lowStockCount = mockData.filter(item => item.currentStock <= item.minimumStock).length;
+      setStats(prev => ({ ...prev, lowStockItems: lowStockCount }));
     }
   };
 
+  const openInventoryModal = (item = null) => {
+    if (item) {
+      setEditingInventoryItem(item.id);
+      setInventoryFormData({
+        name: item.name,
+        description: item.description || '',
+        unitCost: item.unitCost,
+        unitType: item.unitType,
+        currentStock: item.currentStock,
+        minimumStock: item.minimumStock,
+        maximumStock: item.maximumStock || 100
+      });
+    } else {
+      setEditingInventoryItem(null);
+      setInventoryFormData({
+        name: '',
+        description: '',
+        unitCost: 0,
+        unitType: 'UNITS',
+        currentStock: 0,
+        minimumStock: 0,
+        maximumStock: 100
+      });
+    }
+    setIsInventoryModalOpen(true);
+  };
+
+  const closeInventoryModal = () => {
+    setIsInventoryModalOpen(false);
+  };
+
+  const handleInventorySubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const url = editingInventoryItem 
+        ? `http://localhost:8082/api/inventory/inventory/${editingInventoryItem}`
+        : 'http://localhost:8082/api/inventory/inventory';
+      
+      const method = editingInventoryItem ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(inventoryFormData)
+      });
+
+      if (response.ok) {
+        toast.success(`Producto ${editingInventoryItem ? 'actualizado' : 'agregado'} exitosamente`);
+        closeInventoryModal();
+        loadInventory();
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        toast.error('Error al guardar el producto: ' + (errData.message || ''));
+      }
+    } catch (error) {
+      toast.error('Error de red al guardar el producto');
+      console.error(error);
+    }
+  };
+
+  const deleteInventoryItem = async (id) => {
+    if (!window.confirm('¿Estás seguro de eliminar este producto?')) return;
+    try {
+      const response = await fetch(`http://localhost:8082/api/inventory/inventory/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        toast.success('Producto eliminado');
+        loadInventory();
+      } else {
+        toast.error('Error al eliminar producto');
+      }
+    } catch (error) {
+      toast.error('Error de red al eliminar producto');
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userRole');
+    navigate('/');
+  };
+
   const loadMenu = async () => {
+    if (menu.length > 0) return;
     try {
       // Simulación de datos del menú
       const mockMenu = [
@@ -80,6 +203,48 @@ const Admin = () => {
     } catch (error) {
       toast.error('Error al cargar menú');
     }
+  };
+
+  const openMenuModal = (item = null) => {
+    if (item) {
+      setEditingMenuItem(item.id);
+      setMenuFormData({
+        name: item.name,
+        price: item.price,
+        category: item.category,
+        available: item.available
+      });
+    } else {
+      setEditingMenuItem(null);
+      setMenuFormData({
+        name: '',
+        price: 0,
+        category: 'Hamburguesas',
+        available: true
+      });
+    }
+    setIsMenuModalOpen(true);
+  };
+
+  const closeMenuModal = () => setIsMenuModalOpen(false);
+
+  const handleMenuSubmit = (e) => {
+    e.preventDefault();
+    if (editingMenuItem) {
+      setMenu(menu.map(item => item.id === editingMenuItem ? { ...item, ...menuFormData } : item));
+      toast.success('Platillo actualizado exitosamente');
+    } else {
+      const newItem = { ...menuFormData, id: Date.now() };
+      setMenu([...menu, newItem]);
+      toast.success('Platillo agregado exitosamente');
+    }
+    closeMenuModal();
+  };
+
+  const deleteMenuItem = (id) => {
+    if (!window.confirm('¿Estás seguro de eliminar este platillo?')) return;
+    setMenu(menu.filter(item => item.id !== id));
+    toast.success('Platillo eliminado');
   };
 
   const getStockStatus = (current, min) => {
@@ -97,47 +262,55 @@ const Admin = () => {
 
   const renderDashboard = () => (
     <div>
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Panel de Administración</h2>
+      <h2 className="text-2xl font-bold text-secondary-900 mb-6">Panel de Administración</h2>
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Pedidos Totales</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalOrders}</p>
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pedidos Totales</p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{stats.totalOrders}</p>
             </div>
-            <ShoppingCart className="h-8 w-8 text-blue-500" />
+            <div className="bg-primary/10 p-3 rounded-full group-hover:bg-primary/20 transition-colors">
+              <ShoppingCart className="h-6 w-6 text-primary" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Ingresos</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ingresos</p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{formatCurrency(stats.totalRevenue)}</p>
             </div>
-            <DollarSign className="h-8 w-8 text-green-500" />
+            <div className="bg-green-100 p-3 rounded-full group-hover:bg-green-200 transition-colors">
+              <DollarSign className="h-6 w-6 text-green-600" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Usuarios Activos</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.activeUsers}</p>
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Usuarios Activos</p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{stats.activeUsers}</p>
             </div>
-            <Users className="h-8 w-8 text-purple-500" />
+            <div className="bg-blue-100 p-3 rounded-full group-hover:bg-blue-200 transition-colors">
+              <Users className="h-6 w-6 text-blue-600" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Stock Crítico</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.lowStockItems}</p>
+              <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Stock Crítico</p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{stats.lowStockItems}</p>
             </div>
-            <AlertTriangle className="h-8 w-8 text-red-500" />
+            <div className="bg-red-100 p-3 rounded-full group-hover:bg-red-200 transition-colors">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+            </div>
           </div>
         </div>
       </div>
@@ -145,7 +318,7 @@ const Admin = () => {
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Pedidos Recientes</h3>
+          <h3 className="text-lg font-semibold text-secondary-900 mb-4">Pedidos Recientes</h3>
           <div className="space-y-3">
             {[1, 2, 3, 4].map(i => (
               <div key={i} className="flex items-center justify-between py-2 border-b">
@@ -153,7 +326,7 @@ const Admin = () => {
                   <p className="font-medium">ORD-{1000 + i}</p>
                   <p className="text-sm text-gray-600">Hace {i * 15} minutos</p>
                 </div>
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-sm rounded-full">
+                <span className="px-2 py-1 bg-accent-100 text-accent-800 text-sm rounded-full">
                   Completado
                 </span>
               </div>
@@ -162,19 +335,26 @@ const Admin = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Productos con Stock Bajo</h3>
+          <h3 className="text-lg font-semibold text-secondary-900 mb-4">Productos con Stock Bajo</h3>
           <div className="space-y-3">
-            {inventory.filter(item => item.currentStock <= item.minStock).slice(0, 4).map(item => (
-              <div key={item.id} className="flex items-center justify-between py-2 border-b">
-                <div>
-                  <p className="font-medium">{item.name}</p>
-                  <p className="text-sm text-gray-600">{item.currentStock} / {item.minStock} {item.unit}</p>
+            {inventory.length > 0 ? (
+              inventory.filter(item => item.currentStock <= item.minimumStock).slice(0, 4).map(item => (
+                <div key={item.id} className="flex items-center justify-between py-2 border-b">
+                  <div>
+                    <p className="font-medium">{item.name}</p>
+                    <p className="text-sm text-gray-600">{item.currentStock} / {item.minimumStock} {item.unitType}</p>
+                  </div>
+                  <span className="px-2 py-1 bg-alert-100 text-alert-800 text-sm rounded-full">
+                    Crítico
+                  </span>
                 </div>
-                <span className="px-2 py-1 bg-red-100 text-red-800 text-sm rounded-full">
-                  Crítico
-                </span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 py-2">Cargando inventario...</p>
+            )}
+            {inventory.length > 0 && inventory.filter(item => item.currentStock <= item.minimumStock).length === 0 && (
+              <p className="text-sm text-gray-500 py-2">No hay productos con stock crítico.</p>
+            )}
           </div>
         </div>
       </div>
@@ -184,8 +364,8 @@ const Admin = () => {
   const renderInventory = () => (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Inventario</h2>
-        <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <h2 className="text-2xl font-bold text-secondary-900">Gestión de Inventario</h2>
+        <button onClick={() => openInventoryModal()} className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-600">
           <Plus className="h-4 w-4 mr-2" />
           Agregar Producto
         </button>
@@ -217,36 +397,36 @@ const Admin = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {inventory.map(item => {
-              const status = getStockStatus(item.currentStock, item.minStock);
+              const status = getStockStatus(item.currentStock, item.minimumStock);
               return (
                 <tr key={item.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                    <div className="text-sm text-gray-500">{item.unit}</div>
+                    <div className="text-sm font-medium text-secondary-900">{item.name}</div>
+                    <div className="text-sm text-gray-500">{item.unitType}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className={`text-sm font-medium ${
-                      item.currentStock <= item.minStock ? 'text-red-600' : 'text-gray-900'
+                      item.currentStock <= item.minimumStock ? 'text-alert' : 'text-secondary-900'
                     }`}>
                       {item.currentStock}
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {item.minStock}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
+                    {item.minimumStock}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-${status.color}-100 text-${status.color}-800`}>
                       {status.text}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {formatCurrency(item.price)}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary-900">
+                    {formatCurrency(item.unitCost)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button className="text-blue-600 hover:text-blue-900 mr-3">
+                    <button onClick={() => openInventoryModal(item)} className="text-primary hover:text-blue-900 mr-3">
                       <Edit className="h-4 w-4" />
                     </button>
-                    <button className="text-red-600 hover:text-red-900">
+                    <button onClick={() => deleteInventoryItem(item.id)} className="text-alert hover:text-red-900">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </td>
@@ -256,16 +436,112 @@ const Admin = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Modal de Inventario */}
+      {isInventoryModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-secondary-900">
+                {editingInventoryItem ? 'Modificar Producto' : 'Agregar Nuevo Producto'}
+              </h3>
+              <button onClick={closeInventoryModal} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleInventorySubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <input 
+                  type="text" 
+                  required
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                  value={inventoryFormData.name}
+                  onChange={(e) => setInventoryFormData({...inventoryFormData, name: e.target.value})}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock Actual</label>
+                  <input 
+                    type="number" 
+                    required min="0"
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                    value={inventoryFormData.currentStock}
+                    onChange={(e) => setInventoryFormData({...inventoryFormData, currentStock: parseInt(e.target.value)})}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo</label>
+                  <input 
+                    type="number" 
+                    required min="0"
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                    value={inventoryFormData.minimumStock}
+                    onChange={(e) => setInventoryFormData({...inventoryFormData, minimumStock: parseInt(e.target.value)})}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unidad</label>
+                  <select 
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                    value={inventoryFormData.unitType}
+                    onChange={(e) => setInventoryFormData({...inventoryFormData, unitType: e.target.value})}
+                  >
+                    <option value="UNITS">Unidades</option>
+                    <option value="KILOGRAMS">Kilogramos</option>
+                    <option value="GRAMS">Gramos</option>
+                    <option value="LITERS">Litros</option>
+                    <option value="MILLILITERS">Mililitros</option>
+                    <option value="DOZENS">Docenas</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio Costo</label>
+                  <input 
+                    type="number" 
+                    required min="0" step="0.01"
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                    value={inventoryFormData.unitCost}
+                    onChange={(e) => setInventoryFormData({...inventoryFormData, unitCost: parseFloat(e.target.value)})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-4 space-x-3">
+                <button 
+                  type="button" 
+                  onClick={closeInventoryModal}
+                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-600"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 
   const renderMenu = () => (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">Gestión de Menú</h2>
-        <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+        <h2 className="text-2xl font-bold text-secondary-900">Gestión de Menú</h2>
+        <button onClick={() => openMenuModal()} className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-600">
           <Plus className="h-4 w-4 mr-2" />
-          Agregar Platillo
+          Agregar nuevo
         </button>
       </div>
 
@@ -277,23 +553,23 @@ const Admin = () => {
             </div>
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
+                <h3 className="text-lg font-semibold text-secondary-900">{item.name}</h3>
                 <span className={`px-2 py-1 text-xs rounded-full ${
                   item.available 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
+                    ? 'bg-accent-100 text-accent-800' 
+                    : 'bg-alert-100 text-alert-800'
                 }`}>
                   {item.available ? 'Disponible' : 'No disponible'}
                 </span>
               </div>
               <p className="text-sm text-gray-600 mb-2">{item.category}</p>
-              <p className="text-xl font-bold text-blue-600 mb-4">{formatCurrency(item.price)}</p>
+              <p className="text-xl font-bold text-primary mb-4">{formatCurrency(item.price)}</p>
               <div className="flex space-x-2">
-                <button className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                <button onClick={() => openMenuModal(item)} className="flex-1 flex items-center justify-center px-3 py-2 bg-primary text-white rounded-md hover:bg-primary-600">
                   <Edit className="h-4 w-4 mr-1" />
                   Editar
                 </button>
-                <button className="flex-1 flex items-center justify-center px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+                <button onClick={() => deleteMenuItem(item.id)} className="flex-1 flex items-center justify-center px-3 py-2 bg-alert text-white rounded-md hover:bg-alert-600">
                   <Trash2 className="h-4 w-4 mr-1" />
                   Eliminar
                 </button>
@@ -302,6 +578,95 @@ const Admin = () => {
           </div>
         ))}
       </div>
+
+      {/* Modal de Menú */}
+      {isMenuModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-secondary-900">
+                {editingMenuItem ? 'Modificar Platillo' : 'Agregar Nuevo Platillo'}
+              </h3>
+              <button onClick={closeMenuModal} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleMenuSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Platillo</label>
+                <input 
+                  type="text" 
+                  required
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                  value={menuFormData.name}
+                  onChange={(e) => setMenuFormData({...menuFormData, name: e.target.value})}
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+                  <select 
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                    value={menuFormData.category}
+                    onChange={(e) => setMenuFormData({...menuFormData, category: e.target.value})}
+                  >
+                    <option value="Hamburguesas">Hamburguesas</option>
+                    <option value="Pizzas">Pizzas</option>
+                    <option value="Mexicana">Mexicana</option>
+                    <option value="Sushi">Sushi</option>
+                    <option value="Combos">Combos</option>
+                    <option value="Ensaladas">Ensaladas</option>
+                    <option value="Acompañamientos">Acompañamientos</option>
+                    <option value="Bebidas">Bebidas</option>
+                    <option value="Postres">Postres</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
+                  <input 
+                    type="number" 
+                    required min="0" step="1"
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                    value={menuFormData.price}
+                    onChange={(e) => setMenuFormData({...menuFormData, price: parseInt(e.target.value)})}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center mt-4">
+                <input 
+                  type="checkbox" 
+                  id="available"
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  checked={menuFormData.available}
+                  onChange={(e) => setMenuFormData({...menuFormData, available: e.target.checked})}
+                />
+                <label htmlFor="available" className="ml-2 block text-sm text-gray-900">
+                  Disponible para la venta
+                </label>
+              </div>
+
+              <div className="flex justify-end pt-4 space-x-3">
+                <button 
+                  type="button" 
+                  onClick={closeMenuModal}
+                  className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  type="submit" 
+                  className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-600"
+                >
+                  Guardar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -314,13 +679,36 @@ const Admin = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header con Título y Notificaciones */}
+      <div className="flex justify-between items-center mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex items-center space-x-3">
+          <QuickBiteLogo iconSize="h-10 w-10" speedLineSize="h-8 w-8" color="text-gray-800" />
+          <div>
+            <h1 className="text-2xl font-extrabold text-gray-900 leading-tight tracking-tight">
+              QuickBite <span className="text-gray-500 font-medium">| Portal de Administración</span>
+            </h1>
+          </div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <NotificationBadge />
+          <button 
+            onClick={handleLogout}
+            className="flex items-center text-gray-500 hover:text-alert-600 transition-colors"
+            title="Cerrar sesión"
+          >
+            <LogOut className="h-5 w-5 mr-1" />
+            <span className="text-sm font-medium">Salir</span>
+          </button>
+        </div>
+      </div>
+
       {/* Navigation Tabs */}
       <div className="border-b border-gray-200 mb-8">
         <nav className="-mb-px flex space-x-8">
@@ -330,10 +718,10 @@ const Admin = () => {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm ${
+                className={`flex items-center py-3 px-4 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? 'border-gray-800 text-gray-900 bg-gray-50'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 hover:bg-gray-50/50'
                 }`}
               >
                 <Icon className="h-4 w-4 mr-2" />

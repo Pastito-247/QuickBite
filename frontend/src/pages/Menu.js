@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { Plus, Minus, ShoppingCart, Clock, DollarSign } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Menu = () => {
   const [menuItems, setMenuItems] = useState([]);
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadMenuItems();
@@ -102,8 +104,34 @@ const Menu = () => {
       toast.error('El carrito está vacío');
       return;
     }
-    // Aquí iría la lógica para procesar el pedido
-    toast.success('Procesando pedido...');
+
+    // Lógica para guardar el pedido simulado en localStorage
+    const existingOrders = JSON.parse(localStorage.getItem('mockClientOrders') || '[]');
+    
+    // Si es el primer pedido, pedimos confirmación
+    if (existingOrders.length === 0) {
+      const confirmFirstOrder = window.confirm(
+        '¡Es tu primer pedido!\n\nConfirmaremos que enviaremos tu comida a tu dirección principal guardada (Av. Providencia 1234, Depto 502, Santiago). ¿Deseas continuar?'
+      );
+      if (!confirmFirstOrder) return;
+    }
+
+    const newOrder = {
+      id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
+      items: cart,
+      total: getTotalPrice(),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      estimatedTime: 25, // Mock time
+      trackingNumber: `TRK-${Math.floor(100000 + Math.random() * 900000)}`
+    };
+
+    const updatedOrders = [newOrder, ...existingOrders];
+    localStorage.setItem('mockClientOrders', JSON.stringify(updatedOrders));
+    
+    setCart([]);
+    toast.success('¡Pedido procesado con éxito!');
+    navigate('/orders');
   };
 
   const categories = [...new Set(menuItems.map(item => item.category))];
@@ -111,7 +139,7 @@ const Menu = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
     );
   }
@@ -119,7 +147,7 @@ const Menu = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Nuestro Menú</h1>
+        <h1 className="text-3xl font-bold text-secondary-900">Nuestro Menú</h1>
         <div className="relative">
           <ShoppingCart className="h-6 w-6 text-gray-600" />
           {getTotalItems() > 0 && (
@@ -146,8 +174,8 @@ const Menu = () => {
                       </div>
                       <div className="p-4">
                         <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">{item.name}</h3>
-                          <span className="text-xl font-bold text-blue-600">
+                          <h3 className="text-lg font-semibold text-secondary-900">{item.name}</h3>
+                          <span className="text-xl font-bold text-primary">
                             ${item.price.toLocaleString('es-CL')}
                           </span>
                         </div>
@@ -162,7 +190,7 @@ const Menu = () => {
                             disabled={!item.available}
                             className={`px-4 py-2 rounded-md font-medium transition-colors ${
                               item.available
-                                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                                ? 'bg-primary text-white hover:bg-primary-600'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
                           >
@@ -180,7 +208,7 @@ const Menu = () => {
         {/* Cart */}
         <div className="lg:col-span-1">
           <div className="bg-white rounded-lg shadow-md p-6 sticky top-20">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Carrito</h2>
+            <h2 className="text-xl font-semibold text-secondary-900 mb-4">Carrito</h2>
             
             {cart.length === 0 ? (
               <p className="text-gray-500 text-center py-8">El carrito está vacío</p>
@@ -190,7 +218,7 @@ const Menu = () => {
                   {cart.map(item => (
                     <div key={item.id} className="flex items-center justify-between py-2 border-b">
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.name}</h4>
+                        <h4 className="font-medium text-secondary-900">{item.name}</h4>
                         <p className="text-sm text-gray-600">
                           ${item.price.toLocaleString('es-CL')} c/u
                         </p>
@@ -217,13 +245,13 @@ const Menu = () => {
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-lg font-semibold">Total:</span>
-                    <span className="text-2xl font-bold text-blue-600">
+                    <span className="text-2xl font-bold text-primary">
                       ${getTotalPrice().toLocaleString('es-CL')}
                     </span>
                   </div>
                   <button
                     onClick={proceedToCheckout}
-                    className="w-full bg-blue-600 text-white py-3 rounded-md font-semibold hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    className="w-full bg-primary text-white py-3 rounded-md font-semibold hover:bg-primary-600 transition-colors flex items-center justify-center"
                   >
                     <DollarSign className="h-5 w-5 mr-2" />
                     Proceder al Pago

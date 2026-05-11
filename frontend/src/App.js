@@ -8,11 +8,13 @@ import './index.css';
 // Components
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
+import Restaurants from './pages/Restaurants';
 import Menu from './pages/Menu';
 import Orders from './pages/Orders';
 import Kitchen from './pages/Kitchen';
 import Login from './pages/Login';
 import Admin from './pages/Admin';
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -22,11 +24,13 @@ function App() {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/restaurants" element={<Restaurants />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/kitchen" element={<Kitchen />} />
             <Route path="/login" element={<Login />} />
             <Route path="/admin" element={<Admin />} />
+            <Route path="/profile" element={<Profile />} />
           </Routes>
         </main>
         <ToastContainer
