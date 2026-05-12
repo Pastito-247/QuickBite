@@ -43,8 +43,8 @@ const Login = () => {
 
     try {
       const url = isRegistering 
-        ? 'http://localhost:8081/api/v1/auth/register' 
-        : 'http://localhost:8081/api/v1/auth/authenticate';
+        ? 'http://localhost:8080/api/v1/auth/register' 
+        : 'http://localhost:8080/api/v1/auth/authenticate';
 
       const payload = isRegistering ? {
         username: formData.username,
@@ -68,6 +68,8 @@ const Login = () => {
         const data = await response.json();
         localStorage.setItem('token', data.accessToken);
         localStorage.setItem('userId', data.userId);
+        localStorage.setItem('userName', data.username);
+        localStorage.setItem('userEmail', data.email);
         localStorage.setItem('userRole', data.role);
         
         toast.success(isRegistering ? '¡Registro exitoso!' : '¡Bienvenido a QuickBite!');

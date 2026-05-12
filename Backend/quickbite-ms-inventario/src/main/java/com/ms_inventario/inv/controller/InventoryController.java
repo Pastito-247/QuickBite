@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/inventory")
-@CrossOrigin(origins = "*")
 @Validated
 @Slf4j
 @Tag(name = "Inventory", description = "Inventory management API for managing ingredients and stock levels")

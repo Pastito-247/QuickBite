@@ -65,13 +65,13 @@ const Admin = () => {
 
   const loadDashboardData = async () => {
     try {
-      // Simulación de datos
-      setStats(prev => ({
-        ...prev,
-        totalOrders: 156,
-        totalRevenue: 2456780,
-        activeUsers: 89
-      }));
+      const response = await fetch('http://localhost:8080/api/v1/pedidos/estadisticas');
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      } else {
+        toast.error('Error al cargar datos del dashboard');
+      }
       setLoading(false);
     } catch (error) {
       toast.error('Error al cargar datos del dashboard');
@@ -81,27 +81,17 @@ const Admin = () => {
 
   const loadInventory = async () => {
     try {
-      const response = await fetch('http://localhost:8082/api/inventory/inventory');
+      const response = await fetch('http://localhost:8080/api/inventory');
       if (response.ok) {
         const data = await response.json();
         setInventory(data);
         const lowStockCount = data.filter(item => item.currentStock <= item.minimumStock).length;
         setStats(prev => ({ ...prev, lowStockItems: lowStockCount }));
       } else {
-        throw new Error('Server returned an error');
+        toast.error('Error al cargar el inventario');
       }
     } catch (error) {
-      toast.info('Usando datos de prueba para el inventario (Modo Offline)', { toastId: 'inventory-offline' });
-      const mockData = [
-        { id: 1, name: 'Pan de Hamburguesa', description: 'Pan brioche', currentStock: 45, minimumStock: 100, unitType: 'UNITS', unitCost: 150 },
-        { id: 2, name: 'Carne de Res Premium', description: 'Carne molida 80/20', currentStock: 25, minimumStock: 30, unitType: 'KILOGRAMS', unitCost: 8500 },
-        { id: 3, name: 'Queso Cheddar', description: 'Láminas de queso', currentStock: 15, minimumStock: 10, unitType: 'KILOGRAMS', unitCost: 6500 },
-        { id: 4, name: 'Tomate', description: 'Tomate fresco', currentStock: 8, minimumStock: 15, unitType: 'KILOGRAMS', unitCost: 1200 },
-        { id: 5, name: 'Lechuga', description: 'Lechuga escarola', currentStock: 5, minimumStock: 10, unitType: 'UNITS', unitCost: 800 },
-      ];
-      setInventory(mockData);
-      const lowStockCount = mockData.filter(item => item.currentStock <= item.minimumStock).length;
-      setStats(prev => ({ ...prev, lowStockItems: lowStockCount }));
+      toast.error('Error al cargar el inventario');
     }
   };
 
@@ -140,8 +130,8 @@ const Admin = () => {
     e.preventDefault();
     try {
       const url = editingInventoryItem 
-        ? `http://localhost:8082/api/inventory/inventory/${editingInventoryItem}`
-        : 'http://localhost:8082/api/inventory/inventory';
+        ? `http://localhost:8080/api/inventory/${editingInventoryItem}`
+        : 'http://localhost:8080/api/inventory';
       
       const method = editingInventoryItem ? 'PUT' : 'POST';
 
@@ -168,7 +158,7 @@ const Admin = () => {
   const deleteInventoryItem = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este producto?')) return;
     try {
-      const response = await fetch(`http://localhost:8082/api/inventory/inventory/${id}`, {
+      const response = await fetch(`http://localhost:8080/api/inventory/${id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -192,14 +182,13 @@ const Admin = () => {
   const loadMenu = async () => {
     if (menu.length > 0) return;
     try {
-      // Simulación de datos del menú
-      const mockMenu = [
-        { id: 1, name: 'Hamburguesa Clásica', price: 8990, category: 'Hamburguesas', available: true },
-        { id: 2, name: 'Combo Big Bite', price: 12990, category: 'Combos', available: true },
-        { id: 3, name: 'Ensalada César', price: 6990, category: 'Ensaladas', available: false },
-        { id: 4, name: 'Papas Fritas', price: 3990, category: 'Acompañamientos', available: true }
-      ];
-      setMenu(mockMenu);
+      const response = await fetch('http://localhost:8080/api/menu');
+      if (response.ok) {
+        const data = await response.json();
+        setMenu(data);
+      } else {
+        toast.error('Error al cargar menú');
+      }
     } catch (error) {
       toast.error('Error al cargar menú');
     }

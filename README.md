@@ -8,11 +8,17 @@ Arquitectura de microservicios para la gestión moderna de restaurantes de comid
 - Node.js 18+
 - Java 17+
 - Maven 3.6+
+- MySQL 8.0+
 
 ### Iniciar el Sistema
-**Windows (Recomendado para evaluación):**
+**Windows con MySQL (Recomendado para evaluación):**
 ```bash
-START.bat
+START_MYSQL.bat
+```
+
+**Windows sin MySQL (Mock Server):**
+```bash
+START_EVALUACION.bat
 ```
 
 ### Acceso a la Aplicación
@@ -137,6 +143,12 @@ QuickBite/
 ## 🛠️ Desarrollo Local
 
 ### Para detener los servicios
+**Con MySQL:**
+```bash
+STOP_MYSQL.bat
+```
+
+**Sin MySQL:**
 ```bash
 STOP.bat
 ```

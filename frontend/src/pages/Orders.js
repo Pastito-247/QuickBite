@@ -15,52 +15,62 @@ const Orders = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Mapea los estados del backend (ES, mayus) al frontend (EN, minus)
+  const mapEstado = (estado) => {
+    switch ((estado || '').toUpperCase()) {
+      case 'PENDIENTE':
+      case 'CONFIRMADO':
+        return 'pending';
+      case 'EN_PREPARACION':
+      case 'PREPARANDO':
+        return 'preparing';
+      case 'LISTO':
+      case 'LISTO_PARA_ENTREGA':
+        return 'ready';
+      case 'ENTREGADO':
+      case 'COMPLETADO':
+        return 'delivered';
+      case 'CANCELADO':
+        return 'cancelled';
+      default:
+        return (estado || '').toLowerCase();
+    }
+  };
+
+  // Adapta un PedidoResponse del backend al formato que usa la UI
+  const mapPedido = (p) => ({
+    id: p.numeroPedido || `PED-${p.id}`,
+    backendId: p.id,
+    status: mapEstado(p.estado),
+    total: Number(p.total) || 0,
+    createdAt: p.fechaCreacion,
+    estimatedTime: p.tiempoEstimadoMinutos || 0,
+    trackingNumber: p.numeroPedido,
+    items: (p.items || []).map(it => ({
+      id: it.id,
+      name: it.nombreProducto,
+      quantity: it.cantidad,
+      price: Number(it.precioUnitario) || 0
+    }))
+  });
+
   const loadOrders = async () => {
     try {
-      const storedOrders = JSON.parse(localStorage.getItem('mockClientOrders') || '[]');
-      
-      // Si no hay pedidos en localStorage, inicializamos con algunos de prueba
-      if (storedOrders.length === 0) {
-        const mockData = [
-          {
-            id: "ORD-001",
-            items: [
-              { name: "Hamburguesa Clásica", quantity: 2, price: 8990 },
-              { name: "Papas Fritas Grandes", quantity: 1, price: 3990 }
-            ],
-            total: 21970,
-            status: "preparing",
-            createdAt: new Date().toISOString(),
-            estimatedTime: 20,
-            trackingNumber: "TRK-123456"
-          },
-          {
-            id: "ORD-002",
-            items: [
-              { name: "Combo Big Bite", quantity: 1, price: 12990 }
-            ],
-            total: 12990,
-            status: "ready",
-            createdAt: new Date(Date.now() - 3600000).toISOString(),
-            estimatedTime: 5,
-            trackingNumber: "TRK-123457"
-          },
-          {
-            id: "ORD-003",
-            items: [
-              { name: "Ensalada César", quantity: 1, price: 6990 }
-            ],
-            total: 6990,
-            status: "delivered",
-            createdAt: new Date(Date.now() - 86400000).toISOString(),
-            estimatedTime: 0,
-            trackingNumber: "TRK-123458"
-          }
-        ];
-        localStorage.setItem('mockClientOrders', JSON.stringify(mockData));
-        setOrders(mockData);
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        setOrders([]);
+        setLoading(false);
+        return;
+      }
+      const response = await fetch(`http://localhost:8080/api/orders/user/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : (data.content || []);
+        setOrders(list.map(mapPedido));
+      } else if (response.status === 404) {
+        setOrders([]);
       } else {
-        setOrders(storedOrders);
+        toast.error('Error al cargar los pedidos');
       }
       setLoading(false);
     } catch (error) {
