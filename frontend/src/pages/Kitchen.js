@@ -23,75 +23,73 @@ const Kitchen = () => {
     navigate('/');
   };
 
+  // Actualizar stats cuando cambian las órdenes
+  useEffect(() => {
+    setStats({
+      pending: orders.filter(o => o.status === 'pending').length,
+      preparing: orders.filter(o => o.status === 'preparing').length,
+      ready: orders.filter(o => o.status === 'ready').length,
+      completedToday: orders.filter(o => o.status === 'delivered').length
+    });
+  }, [orders]);
+
   useEffect(() => {
     loadOrders();
-    loadStats();
     // Actualizar en tiempo real cada 10 segundos
     const interval = setInterval(() => {
       loadOrders();
-      loadStats();
     }, 10000);
     return () => clearInterval(interval);
   }, []);
 
+  const mapEstado = (estado) => {
+    switch ((estado || '').toUpperCase()) {
+      case 'PENDIENTE':
+      case 'CONFIRMADO':
+        return 'pending';
+      case 'EN_PREPARACION':
+      case 'PREPARANDO':
+        return 'preparing';
+      case 'LISTO':
+      case 'LISTO_PARA_ENTREGA':
+        return 'ready';
+      case 'ENTREGADO':
+      case 'COMPLETADO':
+        return 'delivered';
+      case 'CANCELADO':
+        return 'cancelled';
+      default:
+        return (estado || '').toLowerCase();
+    }
+  };
+
   const loadOrders = async () => {
     try {
-      // Simulación de datos - reemplazar con llamada a API real
-      const mockData = [
-        {
-          id: "ORD-001",
-          customerName: "Juan Pérez",
-          items: [
-            { name: "Hamburguesa Clásica", quantity: 2, notes: "Sin cebolla" },
-            { name: "Papas Fritas Grandes", quantity: 1, notes: "" }
-          ],
-          status: "pending",
-          priority: "normal",
-          createdAt: "2026-05-05T15:30:00Z",
-          estimatedTime: 20,
-          tableNumber: "T-05"
-        },
-        {
-          id: "ORD-002",
-          customerName: "María González",
-          items: [
-            { name: "Combo Big Bite", quantity: 1, notes: "Extra queso" },
-            { name: "Ensalada César", quantity: 1, notes: "Sin crutones" }
-          ],
-          status: "preparing",
-          priority: "high",
-          createdAt: "2026-05-05T15:25:00Z",
-          estimatedTime: 10,
-          tableNumber: "T-03",
-          startedAt: "2026-05-05T15:35:00Z"
-        },
-        {
-          id: "ORD-003",
-          customerName: "Carlos Rodríguez",
-          items: [
-            { name: "Hamburguesa Clásica", quantity: 1, notes: "" }
-          ],
-          status: "ready",
-          priority: "normal",
-          createdAt: "2026-05-05T15:15:00Z",
-          estimatedTime: 0,
-          tableNumber: "T-07"
-        },
-        {
-          id: "ORD-004",
-          customerName: "Ana Martínez",
-          items: [
-            { name: "Combo Big Bite", quantity: 2, notes: "Una sin tomate" },
-            { name: "Papas Fritas Grandes", quantity: 1, notes: "" }
-          ],
-          status: "pending",
-          priority: "urgent",
-          createdAt: "2026-05-05T15:40:00Z",
-          estimatedTime: 25,
-          tableNumber: "T-01"
-        }
-      ];
-      setOrders(mockData);
+      const response = await fetch('http://localhost:8080/api/orders?page=0&size=100');
+      if (response.ok) {
+        const data = await response.json();
+        const rawList = Array.isArray(data) ? data : (data.content || []);
+        const mapped = rawList.map(p => ({
+          id: p.numeroPedido || `PED-${p.id}`,
+          backendId: p.id,
+          status: mapEstado(p.estado),
+          priority: 'normal',
+          tableNumber: 'Delivery',
+          createdAt: p.fechaCreacion,
+          startedAt: p.fechaActualizacion,
+          completedAt: p.fechaEntrega,
+          estimatedTime: p.tiempoEstimadoMinutos || 30,
+          customerName: p.nombreCliente,
+          items: (p.items || []).map(it => ({
+            quantity: it.cantidad,
+            name: it.nombreProducto,
+            notes: it.notasItem || ''
+          }))
+        }));
+        setOrders(mapped);
+      } else {
+        toast.error('Error al cargar las órdenes');
+      }
       setLoading(false);
     } catch (error) {
       toast.error('Error al cargar las órdenes');
@@ -99,36 +97,51 @@ const Kitchen = () => {
     }
   };
 
-  const loadStats = async () => {
-    try {
-      // Simulación de estadísticas
-      setStats({
-        pending: 2,
-        preparing: 1,
-        ready: 1,
-        completedToday: 45
-      });
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
+  const statusToBackend = {
+    'pending': 'PENDIENTE',
+    'preparing': 'EN_PREPARACION',
+    'ready': 'LISTO',
+    'delivered': 'ENTREGADO',
+    'cancelled': 'CANCELADO'
   };
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
-      // Simulación de actualización - reemplazar con llamada a API real
-      setOrders(orders.map(order => 
-        order.id === orderId 
-          ? { 
-              ...order, 
+      const order = orders.find(o => o.id === orderId);
+      if (!order || !order.backendId) {
+        toast.error('Orden no encontrada');
+        return;
+      }
+      const backendStatus = statusToBackend[newStatus];
+      if (!backendStatus) {
+        toast.error('Estado no válido');
+        return;
+      }
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:8080/api/orders/${order.backendId}/estado`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({ estado: backendStatus })
+      });
+      if (!response.ok) {
+        toast.error('Error al actualizar el estado');
+        return;
+      }
+      // Actualizar localmente para respuesta inmediata
+      setOrders(orders.map(o =>
+        o.id === orderId
+          ? {
+              ...o,
               status: newStatus,
               ...(newStatus === 'preparing' && { startedAt: new Date().toISOString() }),
               ...(newStatus === 'ready' && { completedAt: new Date().toISOString() })
             }
-          : order
+          : o
       ));
-      
       toast.success(`Orden ${orderId} actualizada a ${getStatusText(newStatus)}`);
-      loadStats();
     } catch (error) {
       toast.error('Error al actualizar el estado de la orden');
     }

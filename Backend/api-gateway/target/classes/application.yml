@@ -6,69 +6,137 @@ spring:
     name: api-gateway
   cloud:
     gateway:
+      default-filters:
+        # Si un servicio downstream y el gateway agregan CORS, conserva solo el primero
+        # (del servicio downstream) para evitar el error de "multiple values".
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      # NOTA: CORS lo manejan los microservicios via @CrossOrigin / CorsConfigurationSource.
+      # Si necesitas CORS aqui, descomentalo y asegurate que ningun servicio agregue su propio CORS.
+      # globalcors:
+      #   cors-configurations:
+      #     '[/**]':
+      #       allowedOriginPatterns: "*"
+      #       allowedMethods: "*"
+      #       allowedHeaders: "*"
+      #       allowCredentials: true
       routes:
-        # Auth Service
-        - id: auth-service
-          uri: lb://auth-service
+        # ===== Auth Service (8081) =====
+        # Controller: /api/v1/auth/**
+        - id: auth-service-v1
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/auth/**
+        # Alias /api/auth/login -> /api/v1/auth/authenticate
+        - id: auth-service-login
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/auth/login
+          filters:
+            - SetPath=/api/v1/auth/authenticate
+        # Alias /api/auth/** -> /api/v1/auth/**
+        - id: auth-service-alias
+          uri: http://localhost:8081
           predicates:
             - Path=/api/auth/**
           filters:
-            - StripPrefix=2
+            - RewritePath=/api/auth(?<segment>/?.*), /api/v1/auth$\{segment}
 
-        # Menu Service
+        # ===== Menu Service (8083) =====
+        # Controllers: /api/menu/**, /api/categories/**, /api/admin/menu/**
+        # Alias /api/menu/items -> /api/menu (el controller no tiene /items)
+        - id: menu-items-alias
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/menu/items
+          filters:
+            - SetPath=/api/menu
         - id: menu-service
-          uri: lb://menu-service
+          uri: http://localhost:8083
           predicates:
             - Path=/api/menu/**
-          filters:
-            - StripPrefix=2
+        - id: menu-categories
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/categories/**
+        - id: menu-admin
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/admin/menu/**
 
-        # Inventory Service
+        # ===== Inventory Service (8082) =====
+        # Controller: /inventory/**  (sin prefijo /api)
         - id: inventory-service
-          uri: lb://inventory-service
+          uri: http://localhost:8082
           predicates:
-            - Path=/api/inventory/**
+            - Path=/api/inventory,/api/inventory/**
           filters:
-            - StripPrefix=2
+            - RewritePath=/api/inventory(?<segment>/?.*), /inventory$\{segment}
 
-        # Order Service
-        - id: order-service
-          uri: lb://order-service
+        # ===== Order Service (8084) =====
+        # Controller: /api/v1/pedidos/**
+        - id: order-service-v1
+          uri: http://localhost:8084
           predicates:
-            - Path=/api/orders/**
+            - Path=/api/v1/pedidos/**
+        # Alias /api/orders/user/{id} -> /api/v1/pedidos/cliente/{id}
+        - id: order-service-user-alias
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/orders/user/**
           filters:
-            - StripPrefix=2
+            - RewritePath=/api/orders/user(?<segment>/?.*), /api/v1/pedidos/cliente$\{segment}
+        # Alias /api/orders/** -> /api/v1/pedidos/**
+        - id: order-service-alias
+          uri: http://localhost:8084
+          predicates:
+            - Path=/api/orders,/api/orders/**
+          filters:
+            - RewritePath=/api/orders(?<segment>/?.*), /api/v1/pedidos$\{segment}
 
-        # Payment Service
+        # ===== Payment Service (8085) =====
+        # Controllers: /api/payments/**, /api/wallets/**, /api/transactions/**
         - id: payment-service
-          uri: lb://payment-service
+          uri: http://localhost:8085
           predicates:
             - Path=/api/payments/**
-          filters:
-            - StripPrefix=2
-
-        # Kitchen Service
-        - id: kitchen-service
-          uri: lb://kitchen-service
+        - id: payment-wallets
+          uri: http://localhost:8085
           predicates:
-            - Path=/api/kitchen/**
-          filters:
-            - StripPrefix=2
+            - Path=/api/wallets/**
+        - id: payment-transactions
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/transactions/**
 
-        # Notification Service
-        - id: notification-service
-          uri: lb://notification-service
+        # ===== Kitchen Service (8086) =====
+        # Controller: /orders/** (sin prefijo /api)
+        - id: kitchen-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/api/kitchen,/api/kitchen/**
+          filters:
+            - RewritePath=/api/kitchen(?<segment>/?.*), /orders$\{segment}
+
+        # ===== Notification Service (8087) =====
+        # Controller: /api/notificaciones/**
+        - id: notification-service-es
+          uri: http://localhost:8087
+          predicates:
+            - Path=/api/notificaciones/**
+        # Alias en ingles
+        - id: notification-service-en
+          uri: http://localhost:8087
           predicates:
             - Path=/api/notifications/**
           filters:
-            - StripPrefix=2
+            - RewritePath=/api/notifications(?<segment>/?.*), /api/notificaciones$\{segment}
 
-      # Circuit Breaker Configuration
-      default-filters:
-        - name: CircuitBreaker
-          args:
-            name: default
-            fallbackUri: forward:/fallback
+      # Circuit Breaker Configuration - Comentado temporalmente
+      # default-filters:
+      #   - name: CircuitBreaker
+      #     args:
+      #       name: default
+      #       fallbackUri: forward:/fallback
 
   # Circuit Breaker
   resilience4j:
@@ -83,7 +151,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka-server:8761/eureka
+      defaultZone: http://localhost:8761/eureka
     register-with-eureka: true
     fetch-registry: true
   instance:

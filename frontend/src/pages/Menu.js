@@ -15,50 +15,13 @@ const Menu = () => {
 
   const loadMenuItems = async () => {
     try {
-      // Simulación de datos - reemplazar con llamada a API real
-      const mockData = [
-        {
-          id: 1,
-          name: "Hamburguesa Clásica",
-          description: "Carne premium con lechuga, tomate, cebolla y nuestra salsa especial",
-          price: 8990,
-          category: "Hamburguesas",
-          available: true,
-          preparationTime: 15,
-          image: "/api/placeholder/300/200"
-        },
-        {
-          id: 2,
-          name: "Papas Fritas Grandes",
-          description: "Papas crujientes con sal marina",
-          price: 3990,
-          category: "Acompañamientos",
-          available: true,
-          preparationTime: 8,
-          image: "/api/placeholder/300/200"
-        },
-        {
-          id: 3,
-          name: "Combo Big Bite",
-          description: "Hamburguesa doble + papas + bebida",
-          price: 12990,
-          category: "Combos",
-          available: true,
-          preparationTime: 20,
-          image: "/api/placeholder/300/200"
-        },
-        {
-          id: 4,
-          name: "Ensalada César",
-          description: "Lechuga fresca, pollo grill, parmesano y aderezo césar",
-          price: 6990,
-          category: "Ensaladas",
-          available: false,
-          preparationTime: 10,
-          image: "/api/placeholder/300/200"
-        }
-      ];
-      setMenuItems(mockData);
+      const response = await fetch('http://localhost:8080/api/menu');
+      if (response.ok) {
+        const data = await response.json();
+        setMenuItems(data);
+      } else {
+        toast.error('Error al cargar el menú');
+      }
       setLoading(false);
     } catch (error) {
       toast.error('Error al cargar el menú');
@@ -99,16 +62,24 @@ const Menu = () => {
     return cart.reduce((total, item) => total + item.quantity, 0);
   };
 
-  const proceedToCheckout = () => {
+  const proceedToCheckout = async () => {
     if (cart.length === 0) {
       toast.error('El carrito está vacío');
       return;
     }
 
-    // Lógica para guardar el pedido simulado en localStorage
+    const userId = localStorage.getItem('userId');
+    const userName = localStorage.getItem('userName') || 'Cliente QuickBite';
+    const userEmail = localStorage.getItem('userEmail') || 'cliente@quickbite.com';
+
+    if (!userId) {
+      toast.error('Debes iniciar sesion para hacer un pedido');
+      navigate('/login');
+      return;
+    }
+
+    // Confirmacion de primer pedido
     const existingOrders = JSON.parse(localStorage.getItem('mockClientOrders') || '[]');
-    
-    // Si es el primer pedido, pedimos confirmación
     if (existingOrders.length === 0) {
       const confirmFirstOrder = window.confirm(
         '¡Es tu primer pedido!\n\nConfirmaremos que enviaremos tu comida a tu dirección principal guardada (Av. Providencia 1234, Depto 502, Santiago). ¿Deseas continuar?'
@@ -116,22 +87,50 @@ const Menu = () => {
       if (!confirmFirstOrder) return;
     }
 
-    const newOrder = {
-      id: `ORD-${Math.floor(1000 + Math.random() * 9000)}`,
-      items: cart,
-      total: getTotalPrice(),
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      estimatedTime: 25, // Mock time
-      trackingNumber: `TRK-${Math.floor(100000 + Math.random() * 900000)}`
+    // Payload para POST /api/orders -> reescrito a /api/v1/pedidos
+    const payload = {
+      clienteId: Number(userId),
+      nombreCliente: userName,
+      emailCliente: userEmail,
+      telefonoCliente: '+56900000000',
+      direccionEntrega: 'Av. Providencia 1234, Depto 502, Santiago',
+      metodoPago: 'EFECTIVO',
+      costoEnvio: 0,
+      notasCliente: '',
+      items: cart.map(it => ({
+        productoId: it.id,
+        nombreProducto: it.name,
+        descripcionProducto: it.description || '',
+        cantidad: it.quantity,
+        precioUnitario: Number(it.price)
+      }))
     };
 
-    const updatedOrders = [newOrder, ...existingOrders];
-    localStorage.setItem('mockClientOrders', JSON.stringify(updatedOrders));
-    
-    setCart([]);
-    toast.success('¡Pedido procesado con éxito!');
-    navigate('/orders');
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:8080/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error('Error creando pedido:', errText);
+        toast.error('No se pudo registrar el pedido en el servidor');
+        return;
+      }
+
+      setCart([]);
+      toast.success('¡Pedido procesado con éxito!');
+      navigate('/orders');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error de conexion al crear el pedido');
+    }
   };
 
   const categories = [...new Set(menuItems.map(item => item.category))];

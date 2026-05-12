@@ -8,7 +8,7 @@ app.use(express.json());
 
 // Mock authentication endpoint
 app.post('/api/auth/login', (req, res) => {
-  const { email, password, role } = req.body;
+  const { email, password } = req.body;
   
   const mockUsers = [
     { email: 'admin@quickbite.com', password: 'admin123', role: 'admin', token: 'admin-token' },
@@ -18,14 +18,15 @@ app.post('/api/auth/login', (req, res) => {
 
   const user = mockUsers.find(u => 
     u.email === email && 
-    u.password === password && 
-    u.role === role
+    u.password === password
   );
 
   if (user) {
     res.json({
       success: true,
-      token: user.token,
+      accessToken: user.token,
+      userId: user.email,
+      role: user.role,
       user: {
         email: user.email,
         role: user.role
@@ -37,6 +38,24 @@ app.post('/api/auth/login', (req, res) => {
       message: 'Credenciales incorrectas'
     });
   }
+});
+
+// Mock registration endpoint
+app.post('/api/auth/register', (req, res) => {
+  const { username, email, password, firstName, lastName, role } = req.body;
+  
+  // Simulación de registro exitoso
+  res.json({
+    success: true,
+    message: 'Usuario registrado exitosamente',
+    accessToken: 'new-user-token',
+    userId: email,
+    role: role,
+    user: {
+      email: email,
+      role: role
+    }
+  });
 });
 
 // Mock menu endpoint

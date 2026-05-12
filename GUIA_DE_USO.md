@@ -34,19 +34,26 @@ QuickBite es un sistema de gestión de restaurantes basado en microservicios que
 - Node.js 18+
 - Java 17+
 - Maven 3.6+
+- MySQL 8.0+
 - Git
 
 ---
 
 ## 🚀 Instalación y Configuración
 
-### **Método 1: Evaluación Local (Recomendado)**
+### **Método 1: Evaluación con MySQL (Recomendado)**
 ```bash
 # Windows
-START.bat
+START_MYSQL.bat
 ```
 
-### **Método 2: Desarrollo Manual**
+### **Método 2: Evaluación con Mock Server**
+```bash
+# Windows
+START_EVALUACION.bat
+```
+
+### **Método 3: Desarrollo Manual**
 ```bash
 # 1. Instalar dependencias del frontend
 cd frontend
@@ -95,6 +102,8 @@ npm start
    - Verificar mensaje de procesamiento
 5. Ir a **Mis Pedidos**:
    - Verificar que aparezcan los pedidos realizados
+6. **Con MySQL**: Verificar que los datos se guarden en la base de datos
+7. **Con Mock Server**: Verificar que los datos se guarden en localStorage
    - Probar hacer clic en "Ver detalles"
 
 ### **Paso 4: Probar Flujo de Cocina**
@@ -105,10 +114,15 @@ npm start
    - Órdenes en estado "En preparación"
    - Órdenes en estado "Listo para entregar"
 4. Probar actualización de estados:
-   - Hacer clic en "Comenzar Preparación" en una orden pendiente
-   - Verificar que cambie a "En preparación"
+   - Hacer clic en "Iniciar Preparación"
    - Hacer clic en "Marcar como Listo"
-   - Verificar que cambie a "Listo para entregar"
+   - Verificar que los estados se actualizan
+5. Probar estadísticas:
+   - Verificar contador de pedidos pendientes
+   - Verificar contador de pedidos en preparación
+   - Verificar contador de pedidos listos
+6. **Con MySQL**: Verificar que los cambios se guarden en la base de datos
+7. **Con Mock Server**: Verificar que los cambios se actualicen en tiempo real para entregar
 
 ### **Paso 5: Probar Flujo de Administrador**
 1. Cerrar sesión y volver a iniciar como **administrador**
@@ -182,11 +196,26 @@ node mock-server.js
 3. Verificar consola para errores específicos
 
 ### **Problema: Scripts no funcionan**
-**Síntomas**: Error al ejecutar START.bat
+**Síntomas**: Error al ejecutar START_MYSQL.bat
 **Solución**:
 ```powershell
 # Ejecutar como administrador
+# Verificar que MySQL este corriendo
 # O iniciar manualmente cada servicio
+```
+
+### **Problema: MySQL no conecta**
+**Síntomas**: Error de conexión a la base de datos
+**Solución**:
+```powershell
+# 1. Verificar que MySQL este corriendo
+mysql --version
+
+# 2. Configurar la contraseña de root si es necesaria
+# Editar application.properties en cada microservicio
+
+# 3. Ejecutar el script de base de datos
+mysql -u root -p < database-setup.sql
 ```
 
 ### **Problema: Permisos en Windows**
@@ -218,7 +247,7 @@ curl http://localhost:8080/api/kitchen/orders
 ### **Verificación en Navegador**
 - **Frontend**: http://localhost:3000
 - **API Gateway**: http://localhost:8080
-- **Eureka Dashboard**: http://localhost:8761 (solo con Docker)
+- **Eureka Dashboard**: http://localhost:8761 (solo con MySQL)
 
 ---
 
@@ -257,8 +286,11 @@ cd frontend && npm start
 # Logs de backend mock
 node mock-server.js
 
-# Logs de Docker
-docker-compose logs -f [nombre-servicio]
+# Logs de MySQL
+mysql -u root -p -e "SHOW DATABASES;"
+
+# Logs de microservicios
+cd Backend/[nombre-servicio] && mvn spring-boot:run
 ```
 
 ### **Contacto del Equipo**
@@ -270,8 +302,8 @@ docker-compose logs -f [nombre-servicio]
 
 ## 🚀 Siguientes Pasos
 
-1. **Integrar microservicios reales** (reemplazar mock)
-2. **Configurar bases de datos MySQL**
+1. **✅ Microservicios reales integrados** (MySQL configurado)
+2. **✅ Bases de datos MySQL configuradas**
 3. **Implementar WebSockets** para actualizaciones en tiempo real
 4. **Agregar pruebas unitarias y de integración**
 5. **Desplegar en producción**

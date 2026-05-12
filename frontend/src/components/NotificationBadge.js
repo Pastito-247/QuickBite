@@ -23,7 +23,7 @@ const NotificationBadge = () => {
     if (!token || !userId) return;
 
     try {
-      const response = await fetch(`http://localhost:8084/api/notificaciones/usuario/${userId}/no-leidas?size=10`, {
+      const response = await fetch(`http://localhost:8080/api/notificaciones/usuario/${userId}/no-leidas?size=10`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -49,7 +49,7 @@ const NotificationBadge = () => {
   const markAsRead = async (id) => {
     const token = localStorage.getItem('token');
     try {
-      const response = await fetch(`http://localhost:8084/api/notificaciones/${id}/marcar-leida`, {
+      const response = await fetch(`http://localhost:8080/api/notificaciones/${id}/marcar-leida`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`

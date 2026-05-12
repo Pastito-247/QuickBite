@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
+import jakarta.annotation.PostConstruct;
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
@@ -31,8 +31,10 @@ public class EncryptionService {
     public void init() {
         Security.addProvider(new BouncyCastleProvider());
         // Asegurar que la clave tenga 32 bytes para AES-256
-        String paddedKey = String.format("%-32s", encryptionKey).substring(0, 32);
-        this.encryptionKey = paddedKey;
+        byte[] keyBytes = encryptionKey.getBytes(StandardCharsets.UTF_8);
+        byte[] paddedKey = new byte[32];
+        System.arraycopy(keyBytes, 0, paddedKey, 0, Math.min(keyBytes.length, 32));
+        this.encryptionKey = Base64.getEncoder().encodeToString(paddedKey);
         logger.info("EncryptionService initialized with AES-256-GCM");
     }
 
