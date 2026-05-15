@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -16,11 +15,9 @@ import java.util.List;
 @Slf4j
 public class JwtTokenProvider {
 
-    @Value("${JWT_SECRET:quickbite-secret-key-for-development-change-in-production}")
-    private String jwtSecret;
+    private String jwtSecret = "quickbite-secret-key-for-development-change-in-production";
 
-    @Value("${JWT_EXPIRATION:86400000}")
-    private long jwtExpirationInMs;
+    private long jwtExpirationInMs = 86400000L;
 
     private SecretKey getSigningKey() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
