@@ -20,9 +20,9 @@ public class DatabaseConfig {
     public DataSource dataSource() {
         return DataSourceBuilder.create()
                 .driverClassName("com.mysql.cj.jdbc.Driver")
-                .url("jdbc:mysql://localhost:3306/kitchen_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true")
-                .username("kitchen_user")
-                .password("kitchen_password")
+                .url("jdbc:mysql://localhost:3306/quickbite_kitchen_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true")
+                .username("root")
+                .password("root")
                 .build();
     }
     
