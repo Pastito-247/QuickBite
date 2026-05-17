@@ -180,7 +180,6 @@ const Admin = () => {
   };
 
   const loadMenu = async () => {
-    if (menu.length > 0) return;
     try {
       const response = await fetch('http://localhost:8080/api/menu');
       if (response.ok) {
