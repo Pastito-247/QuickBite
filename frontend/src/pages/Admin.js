@@ -180,7 +180,6 @@ const Admin = () => {
   };
 
   const loadMenu = async () => {
-    if (menu.length > 0) return;
     try {
       const response = await fetch('http://localhost:8080/api/menu');
       if (response.ok) {
@@ -217,23 +216,50 @@ const Admin = () => {
 
   const closeMenuModal = () => setIsMenuModalOpen(false);
 
-  const handleMenuSubmit = (e) => {
+  const handleMenuSubmit = async (e) => {
     e.preventDefault();
-    if (editingMenuItem) {
-      setMenu(menu.map(item => item.id === editingMenuItem ? { ...item, ...menuFormData } : item));
-      toast.success('Platillo actualizado exitosamente');
-    } else {
-      const newItem = { ...menuFormData, id: Date.now() };
-      setMenu([...menu, newItem]);
-      toast.success('Platillo agregado exitosamente');
+    try {
+      const url = editingMenuItem
+        ? `http://localhost:8080/api/admin/menu/${editingMenuItem}`
+        : 'http://localhost:8080/api/menu';
+      const method = editingMenuItem ? 'PUT' : 'POST';
+      const payload = {
+        name: menuFormData.name,
+        description: menuFormData.description || '',
+        price: menuFormData.price,
+        category: menuFormData.category,
+        available: menuFormData.available
+      };
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+      if (editingMenuItem) {
+        toast.success('Platillo actualizado exitosamente');
+      } else {
+        toast.success('Platillo agregado exitosamente');
+      }
+      await loadMenu();
+    } catch (error) {
+      console.error('Error saving menu item:', error);
+      toast.error('Error al guardar el platillo');
     }
     closeMenuModal();
   };
 
-  const deleteMenuItem = (id) => {
+  const deleteMenuItem = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este platillo?')) return;
-    setMenu(menu.filter(item => item.id !== id));
-    toast.success('Platillo eliminado');
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/menu/${id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+      toast.success('Platillo eliminado');
+      await loadMenu();
+    } catch (error) {
+      console.error('Error deleting menu item:', error);
+      toast.error('Error al eliminar el platillo');
+    }
   };
 
   const getStockStatus = (current, min) => {

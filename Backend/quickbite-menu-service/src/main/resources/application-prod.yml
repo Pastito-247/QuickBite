@@ -1,0 +1,53 @@
+# Configuración para producción
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:mysql://mysql:3306/quickbite_menu_db?useSSL=true&serverTimezone=UTC}
+    username: ${DB_USERNAME:quickbite_user}
+    password: ${DB_PASSWORD:quickbite_password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate  # En producción usar validate o none
+    properties:
+      hibernate:
+        format_sql: false
+
+logging:
+  level:
+    com.quickbite.menu_service: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+  file:
+    name: /app/logs/menu-service.log
+
+# Configuración para producción
+server:
+  port: ${SERVER_PORT:8081}
+
+# Configuración de servicios externos para producción
+app:
+  services:
+    inventory:
+      mock: false
+      url: ${INVENTORY_SERVICE_URL:http://inventory-service:8082}
+    orders:
+      mock: false
+      url: ${ORDERS_SERVICE_URL:http://orders-service:8083}
+
+# Configuración de Circuit Breaker más estricta para producción
+resilience4j:
+  circuitbreaker:
+    instances:
+      inventory-service:
+        failure-rate-threshold: 30
+        wait-duration-in-open-state: 60s
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
