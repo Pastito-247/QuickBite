@@ -8,6 +8,7 @@ import com.quickbite.pedidos.entity.ItemPedido;
 import com.quickbite.pedidos.entity.Pedido;
 import com.quickbite.pedidos.exception.PedidoNotFoundException;
 import com.quickbite.pedidos.exception.PedidoValidationException;
+import com.quickbite.pedidos.integration.MenuServiceClient;
 import com.quickbite.pedidos.repository.ItemPedidoRepository;
 import com.quickbite.pedidos.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -26,13 +28,33 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class PedidoService {
-    
+
     private final PedidoRepository pedidoRepository;
     private final ItemPedidoRepository itemPedidoRepository;
+    private final MenuServiceClient menuServiceClient;
     
     public PedidoResponse crearPedido(PedidoRequest pedidoRequest) {
         log.info("Creando nuevo pedido para el cliente: {}", pedidoRequest.getNombreCliente());
-        
+
+        // Validar stock de ingredientes antes de crear el pedido
+        for (ItemPedidoRequest item : pedidoRequest.getItems()) {
+            try {
+                Map<String, Object> stockValidation = menuServiceClient.validateStock(
+                        item.getProductoId(),
+                        item.getCantidad()
+                );
+                Boolean hasStock = (Boolean) stockValidation.get("hasSufficientStock");
+                if (!hasStock) {
+                    throw new PedidoValidationException(
+                            "No hay suficiente stock para el item: " + item.getNombreProducto()
+                    );
+                }
+            } catch (Exception e) {
+                log.warn("Error validando stock para item {}: {}", item.getProductoId(), e.getMessage());
+                // Continuar aunque falle la validación (fallback)
+            }
+        }
+
         Pedido pedido = Pedido.builder()
                 .clienteId(pedidoRequest.getClienteId())
                 .nombreCliente(pedidoRequest.getNombreCliente())
@@ -44,17 +66,31 @@ public class PedidoService {
                 .notasCliente(pedidoRequest.getNotasCliente())
                 .tiempoEstimadoMinutos(30) // Tiempo estimado por defecto
                 .build();
-        
+
         // Crear items del pedido
         List<ItemPedido> items = pedidoRequest.getItems().stream()
                 .map(this::convertToItemPedido)
                 .collect(Collectors.toList());
-        
+
         items.forEach(item -> item.setPedido(pedido));
         pedido.setItems(items);
-        
+
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
-        
+
+        // Consumir ingredientes después de crear el pedido
+        for (ItemPedido item : items) {
+            try {
+                menuServiceClient.consumeIngredients(
+                        item.getProductoId(),
+                        item.getCantidad()
+                );
+                log.info("Ingredientes consumidos para item {}", item.getProductoId());
+            } catch (Exception e) {
+                log.error("Error consumiendo ingredientes para item {}: {}", item.getProductoId(), e.getMessage());
+                // No fallar el pedido si falla el consumo de ingredientes (fallback)
+            }
+        }
+
         log.info("Pedido creado exitosamente con número: {}", pedidoGuardado.getNumeroPedido());
         return PedidoResponse.fromEntity(pedidoGuardado);
     }
