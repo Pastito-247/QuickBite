@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MenuService {
 
 private final MenuRepository menuRepository;
+private final MenuItemIngredientService menuItemIngredientService;
 
     // Obtener menú y transformarlo a DTO
     public List<MenuItemResponse> getAvailableMenu() {
@@ -164,6 +165,21 @@ private final MenuRepository menuRepository;
     // Método interno para obtener todos los MenuItem (usado por AvailabilityService)
     public List<MenuItem> getAllMenuItemsInternal() {
         return menuRepository.findAll();
+    }
+
+    /**
+     * Validar si hay suficiente stock para un menu item
+     */
+    public boolean validateStockForMenuItem(Long menuItemId, Integer quantity) {
+        return menuItemIngredientService.hasSufficientStock(menuItemId, quantity);
+    }
+
+    /**
+     * Consumir ingredientes de un menu item (llamado al crear pedido)
+     */
+    @Transactional
+    public void consumeIngredientsForMenuItem(Long menuItemId, Integer quantity) {
+        menuItemIngredientService.consumeIngredientsForMenuItem(menuItemId, quantity);
     }
 
     // Método auxiliar para transformar Entity a DTO
