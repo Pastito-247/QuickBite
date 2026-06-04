@@ -12,7 +12,9 @@ import {
   DollarSign,
   ChefHat,
   X,
-  LogOut
+  LogOut,
+  Store,
+  History
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import NotificationBadge from '../components/NotificationBadge';
@@ -53,13 +55,39 @@ const Admin = () => {
     available: true
   });
 
+  // Modal State for Menu Ingredients
+  const [isIngredientsModalOpen, setIsIngredientsModalOpen] = useState(false);
+  const [selectedMenuItemForIngredients, setSelectedMenuItemForIngredients] = useState(null);
+  const [menuItemIngredients, setMenuItemIngredients] = useState([]);
+  const [ingredientFormData, setIngredientFormData] = useState({
+    ingredientId: '',
+    quantity: 1,
+    unit: 'UNITS',
+    isOptional: false
+  });
+
   const navigate = useNavigate();
 
+  const [restaurant, setRestaurant] = useState({
+    id: null,
+    name: 'Mi Restaurante',
+    address: 'Dirección no definida',
+    phone: '+56900000000',
+    ownerId: null
+  });
+  const [salesHistory, setSalesHistory] = useState([]);
+  
   useEffect(() => {
     loadDashboardData();
     loadInventory(); // Always load inventory so the dashboard has data
     if (activeTab === 'menu') {
       loadMenu();
+    }
+    if (activeTab === 'restaurant') {
+      loadRestaurant();
+    }
+    if (activeTab === 'sales') {
+      loadSalesHistory();
     }
   }, [activeTab]);
 
@@ -259,6 +287,182 @@ const Admin = () => {
     } catch (error) {
       console.error('Error deleting menu item:', error);
       toast.error('Error al eliminar el platillo');
+    }
+  };
+
+  // Funciones para gestionar ingredientes de menú
+  const openIngredientsModal = async (menuItem) => {
+    setSelectedMenuItemForIngredients(menuItem);
+    await loadMenuItemIngredients(menuItem.id);
+    setIsIngredientsModalOpen(true);
+  };
+
+  const closeIngredientsModal = () => {
+    setIsIngredientsModalOpen(false);
+    setSelectedMenuItemForIngredients(null);
+    setMenuItemIngredients([]);
+    setIngredientFormData({
+      ingredientId: '',
+      quantity: 1,
+      unit: 'UNITS',
+      isOptional: false
+    });
+  };
+
+  const loadMenuItemIngredients = async (menuItemId) => {
+    try {
+      const response = await fetch(`http://localhost:8080/api/admin/menu-ingredients/${menuItemId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setMenuItemIngredients(data);
+      } else {
+        toast.error('Error al cargar ingredientes del menú');
+      }
+    } catch (error) {
+      console.error('Error loading menu item ingredients:', error);
+      toast.error('Error al cargar ingredientes del menú');
+    }
+  };
+
+  const addIngredientToMenuItem = async (e) => {
+    e.preventDefault();
+    if (!selectedMenuItemForIngredients) return;
+    
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ingredientFormData)
+        }
+      );
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+      toast.success('Ingrediente agregado exitosamente');
+      await loadMenuItemIngredients(selectedMenuItemForIngredients.id);
+      setIngredientFormData({
+        ingredientId: '',
+        quantity: 1,
+        unit: 'UNITS',
+        isOptional: false
+      });
+    } catch (error) {
+      console.error('Error adding ingredient to menu item:', error);
+      toast.error('Error al agregar ingrediente');
+    }
+  };
+
+  const removeIngredientFromMenuItem = async (ingredientId) => {
+    if (!selectedMenuItemForIngredients) return;
+    if (!window.confirm('¿Estás seguro de eliminar este ingrediente del menú?')) return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:8080/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}/${ingredientId}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+      toast.success('Ingrediente eliminado exitosamente');
+      await loadMenuItemIngredients(selectedMenuItemForIngredients.id);
+    } catch (error) {
+      console.error('Error removing ingredient from menu item:', error);
+      toast.error('Error al eliminar ingrediente');
+    }
+  };
+
+  // Funciones para gestionar restaurantes
+  const loadRestaurant = async () => {
+    try {
+      const userId = localStorage.getItem('userId');
+      if (!userId) {
+        toast.error('No hay usuario logueado');
+        return;
+      }
+      const response = await fetch(`http://localhost:8080/api/restaurants/owner/${userId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setRestaurant({
+          id: data.id,
+          name: data.name,
+          address: data.address,
+          phone: data.phone,
+          ownerId: data.ownerId
+        });
+      } else if (response.status === 404) {
+        // No tiene restaurante, mantener valores por defecto
+        setRestaurant(prev => ({ ...prev, ownerId: parseInt(userId) }));
+      } else {
+        toast.error('Error al cargar restaurante');
+      }
+    } catch (error) {
+      console.error('Error loading restaurant:', error);
+      toast.error('Error al cargar restaurante');
+    }
+  };
+
+  const saveRestaurant = async (e) => {
+    e.preventDefault();
+    try {
+      const userId = localStorage.getItem('userId');
+      const payload = {
+        name: restaurant.name,
+        address: restaurant.address,
+        phone: restaurant.phone,
+        ownerId: restaurant.ownerId || parseInt(userId),
+        active: true
+      };
+
+      let response;
+      if (restaurant.id) {
+        // Update existing restaurant
+        response = await fetch(`http://localhost:8080/api/restaurants/${restaurant.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        // Create new restaurant
+        response = await fetch('http://localhost:8080/api/restaurants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      if (!response.ok) throw new Error(`Error ${response.status}`);
+
+      const data = await response.json();
+      setRestaurant({
+        id: data.id,
+        name: data.name,
+        address: data.address,
+        phone: data.phone,
+        ownerId: data.ownerId
+      });
+      toast.success('Restaurante guardado exitosamente');
+    } catch (error) {
+      console.error('Error saving restaurant:', error);
+      toast.error('Error al guardar restaurante');
+    }
+  };
+
+  // Funciones para gestionar historial de ventas
+  const loadSalesHistory = async () => {
+    try {
+      if (!restaurant.id) {
+        toast.error('No hay restaurante seleccionado');
+        return;
+      }
+      const response = await fetch(`http://localhost:8080/api/v1/pedidos/restaurante/${restaurant.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSalesHistory(data);
+      } else {
+        toast.error('Error al cargar historial de ventas');
+      }
+    } catch (error) {
+      console.error('Error loading sales history:', error);
+      toast.error('Error al cargar historial de ventas');
     }
   };
 
@@ -584,6 +788,10 @@ const Admin = () => {
                   <Edit className="h-4 w-4 mr-1" />
                   Editar
                 </button>
+                <button onClick={() => openIngredientsModal(item)} className="flex-1 flex items-center justify-center px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
+                  <Package className="h-4 w-4 mr-1" />
+                  Ingredientes
+                </button>
                 <button onClick={() => deleteMenuItem(item.id)} className="flex-1 flex items-center justify-center px-3 py-2 bg-alert text-white rounded-md hover:bg-alert-600">
                   <Trash2 className="h-4 w-4 mr-1" />
                   Eliminar
@@ -606,23 +814,23 @@ const Admin = () => {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            
+
             <form onSubmit={handleMenuSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Platillo</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   required
                   className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
                   value={menuFormData.name}
                   onChange={(e) => setMenuFormData({...menuFormData, name: e.target.value})}
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
-                  <select 
+                  <select
                     className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
                     value={menuFormData.category}
                     onChange={(e) => setMenuFormData({...menuFormData, category: e.target.value})}
@@ -640,8 +848,8 @@ const Admin = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     required min="0" step="1"
                     className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
                     value={menuFormData.price}
@@ -651,8 +859,8 @@ const Admin = () => {
               </div>
 
               <div className="flex items-center mt-4">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   id="available"
                   className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
                   checked={menuFormData.available}
@@ -664,15 +872,15 @@ const Admin = () => {
               </div>
 
               <div className="flex justify-end pt-4 space-x-3">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={closeMenuModal}
                   className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
                 >
                   Cancelar
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-600"
                 >
                   Guardar
@@ -682,13 +890,269 @@ const Admin = () => {
           </div>
         </div>
       )}
+
+      {/* Modal de Ingredientes de Menú */}
+      {isIngredientsModalOpen && selectedMenuItemForIngredients && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-secondary-900">
+                Ingredientes: {selectedMenuItemForIngredients.name}
+              </h3>
+              <button onClick={closeIngredientsModal} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Lista de ingredientes actuales */}
+            <div className="mb-6">
+              <h4 className="text-md font-semibold text-gray-700 mb-3">Ingredientes actuales</h4>
+              {menuItemIngredients.length === 0 ? (
+                <p className="text-sm text-gray-500 italic">No hay ingredientes asignados</p>
+              ) : (
+                <div className="space-y-2">
+                  {menuItemIngredients.map((mi) => {
+                    const ingredient = inventory.find(inv => inv.id === mi.ingredientId);
+                    return (
+                      <div key={mi.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {ingredient ? ingredient.name : `Ingrediente #${mi.ingredientId}`}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Cantidad: {mi.quantity} {mi.unit}
+                            {mi.isOptional && <span className="ml-2 text-blue-600">(Opcional)</span>}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => removeIngredientFromMenuItem(mi.ingredientId)}
+                          className="text-alert hover:text-red-900"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Formulario para agregar ingrediente */}
+            <div className="border-t pt-4">
+              <h4 className="text-md font-semibold text-gray-700 mb-3">Agregar ingrediente</h4>
+              <form onSubmit={addIngredientToMenuItem} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Ingrediente</label>
+                  <select
+                    required
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                    value={ingredientFormData.ingredientId}
+                    onChange={(e) => setIngredientFormData({...ingredientFormData, ingredientId: e.target.value})}
+                  >
+                    <option value="">Seleccionar ingrediente...</option>
+                    {inventory.map(inv => (
+                      <option key={inv.id} value={inv.id}>
+                        {inv.name} (Stock: {inv.currentStock} {inv.unitType})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                    <input
+                      type="number"
+                      required min="1"
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                      value={ingredientFormData.quantity}
+                      onChange={(e) => setIngredientFormData({...ingredientFormData, quantity: parseInt(e.target.value)})}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Unidad</label>
+                    <select
+                      className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                      value={ingredientFormData.unit}
+                      onChange={(e) => setIngredientFormData({...ingredientFormData, unit: e.target.value})}
+                    >
+                      <option value="UNITS">Unidades</option>
+                      <option value="KILOGRAMS">Kilogramos</option>
+                      <option value="GRAMS">Gramos</option>
+                      <option value="LITERS">Litros</option>
+                      <option value="MILLILITERS">Mililitros</option>
+                    </select>
+                  </div>
+                  <div className="flex items-center pt-6">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                        checked={ingredientFormData.isOptional}
+                        onChange={(e) => setIngredientFormData({...ingredientFormData, isOptional: e.target.checked})}
+                      />
+                      <span className="ml-2 text-sm text-gray-900">Opcional</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-4 space-x-3">
+                  <button
+                    type="button"
+                    onClick={closeIngredientsModal}
+                    className="px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-600"
+                  >
+                    Agregar Ingrediente
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderRestaurant = () => (
+    <div>
+      <h2 className="text-2xl font-bold text-secondary-900 mb-6">Mi Restaurante</h2>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 max-w-2xl">
+        <form onSubmit={saveRestaurant}>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Restaurante</label>
+              <input
+                type="text"
+                required
+                className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                value={restaurant.name}
+                onChange={(e) => setRestaurant({...restaurant, name: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+              <input
+                type="text"
+                required
+                className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                value={restaurant.address}
+                onChange={(e) => setRestaurant({...restaurant, address: e.target.value})}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+              <input
+                type="text"
+                required
+                className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                value={restaurant.phone}
+                onChange={(e) => setRestaurant({...restaurant, phone: e.target.value})}
+              />
+            </div>
+            <div className="pt-4">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-600"
+              >
+                Guardar Cambios
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  const renderSalesHistory = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-secondary-900">Historial de Ventas</h2>
+        <button className="flex items-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+          <TrendingUp className="h-4 w-4 mr-2" />
+          Exportar Reporte
+        </button>
+      </div>
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+          <h3 className="text-lg font-medium text-gray-700">Últimos Pedidos</h3>
+          <span className="text-sm text-gray-500">
+            {restaurant.name ? `Restaurante: ${restaurant.name}` : 'No hay restaurante seleccionado'}
+          </span>
+        </div>
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                ID Pedido
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Cliente
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Fecha
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Estado
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {salesHistory.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
+                  No hay pedidos registrados
+                </td>
+              </tr>
+            ) : (
+              salesHistory.map((order) => (
+                <tr key={order.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-secondary-900">
+                    {order.numeroPedido}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {order.nombreCliente}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {new Date(order.fechaCreacion).toLocaleDateString('es-CL')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      order.estado === 'ENTREGADO' ? 'bg-green-100 text-green-800' :
+                      order.estado === 'PENDIENTE' ? 'bg-yellow-100 text-yellow-800' :
+                      order.estado === 'CANCELADO' ? 'bg-red-100 text-red-800' :
+                      'bg-blue-100 text-blue-800'
+                    }`}>
+                      {order.estado}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">
+                    {formatCurrency(order.total)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
     { id: 'inventory', label: 'Inventario', icon: Package },
-    { id: 'menu', label: 'Menú', icon: ChefHat }
+    { id: 'menu', label: 'Menú', icon: ChefHat },
+    { id: 'restaurant', label: 'Mi Restaurante', icon: Store },
+    { id: 'history', label: 'Historial', icon: History }
   ];
 
   if (loading) {
@@ -751,6 +1215,8 @@ const Admin = () => {
       {activeTab === 'dashboard' && renderDashboard()}
       {activeTab === 'inventory' && renderInventory()}
       {activeTab === 'menu' && renderMenu()}
+      {activeTab === 'restaurant' && renderRestaurant()}
+      {activeTab === 'history' && renderSalesHistory()}
     </div>
   );
 };

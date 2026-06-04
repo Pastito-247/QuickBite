@@ -144,8 +144,26 @@ public class PedidoService {
     @Transactional(readOnly = true)
     public Page<PedidoResponse> obtenerTodosLosPedidos(Pageable pageable) {
         Page<Pedido> pedidos = pedidoRepository.findAll(pageable);
-        
+
         log.info("Obteniendo página {} de todos los pedidos", pedidos.getNumber());
+        return pedidos.map(PedidoResponse::fromEntity);
+    }
+
+    @Transactional(readOnly = true)
+    public List<PedidoResponse> obtenerPedidosPorRestaurante(Long restaurantId) {
+        List<Pedido> pedidos = pedidoRepository.findByRestaurantId(restaurantId);
+
+        log.info("Obteniendo {} pedidos para el restaurante: {}", pedidos.size(), restaurantId);
+        return pedidos.stream()
+                .map(PedidoResponse::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PedidoResponse> obtenerPedidosPorRestaurante(Long restaurantId, Pageable pageable) {
+        Page<Pedido> pedidos = pedidoRepository.findByRestaurantId(restaurantId, pageable);
+
+        log.info("Obteniendo página {} de pedidos para el restaurante: {}", pedidos.getNumber(), restaurantId);
         return pedidos.map(PedidoResponse::fromEntity);
     }
     

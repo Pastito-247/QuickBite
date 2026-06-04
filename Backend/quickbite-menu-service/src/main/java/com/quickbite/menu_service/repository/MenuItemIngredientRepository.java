@@ -17,7 +17,7 @@ public interface MenuItemIngredientRepository extends JpaRepository<MenuItemIngr
     /**
      * Obtener todos los ingredientes de un menu item (usando la entidad)
      */
-    List<MenuItemIngredient> findByMenuItem_MenuItemId(Long menuItemId);
+    List<MenuItemIngredient> findByMenuItem_Id(Long menuItemId);
 
     /**
      * Eliminar todos los ingredientes de un menu item
@@ -27,5 +27,5 @@ public interface MenuItemIngredientRepository extends JpaRepository<MenuItemIngr
     /**
      * Eliminar todos los ingredientes de un menu item (usando la entidad)
      */
-    void deleteByMenuItem_MenuItemId(Long menuItemId);
+    void deleteByMenuItem_Id(Long menuItemId);
 }

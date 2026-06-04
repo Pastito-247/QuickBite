@@ -1,5 +1,7 @@
 package com.quickbite.menu_service.service;
 
+import com.quickbite.menu_service.dto.IngredientAvailability;
+import com.quickbite.menu_service.dto.IngredientConsumption;
 import com.quickbite.menu_service.dto.MenuItemIngredientRequest;
 import com.quickbite.menu_service.dto.MenuItemIngredientResponse;
 import com.quickbite.menu_service.entity.MenuItem;
@@ -181,7 +183,7 @@ public class MenuItemIngredientService {
         List<IngredientConsumption> consumptions = ingredients.stream()
                 .map(mii -> IngredientConsumption.builder()
                         .ingredientId(mii.getIngredientId())
-                        .quantity(mii.getQuantity() * quantity)
+                        .quantity(Double.valueOf(mii.getQuantity() * quantity))
                         .unit(mii.getUnit())
                         .build())
                 .collect(Collectors.toList());

@@ -6,24 +6,54 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   
-  // Mock data para el usuario
   const [userData, setUserData] = useState({
-    firstName: 'Juan',
-    lastName: 'Pérez',
-    email: 'juan.perez@ejemplo.com',
-    phone: '+56 9 1234 5678',
-    address: 'Av. Providencia 1234, Depto 502, Santiago',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
     profileImage: null,
     joinDate: 'Enero 2026',
     favoriteRestaurant: 'Burger Queen',
-    totalOrders: 14
+    totalOrders: 0
   });
 
   const [formData, setFormData] = useState({ ...userData });
 
   useEffect(() => {
-    // Si tuviéramos backend, aquí haríamos el fetch
-    // const userId = localStorage.getItem('userId');
+    const fetchUserData = async () => {
+      try {
+        const userId = localStorage.getItem('userId');
+        const token = localStorage.getItem('token');
+        if (!userId || !token) return;
+
+        const response = await fetch(`http://localhost:8080/api/v1/auth/profile/${userId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const loadedData = {
+            firstName: data.firstName || '',
+            lastName: data.lastName || '',
+            email: data.email || '',
+            phone: data.phoneNumber || '',
+            address: '', // No address field in User yet, mocking it
+            profileImage: null,
+            joinDate: new Date(data.createdAt).toLocaleDateString() || '2026',
+            favoriteRestaurant: 'Burger Queen',
+            totalOrders: 0
+          };
+          setUserData(loadedData);
+          setFormData(loadedData);
+        }
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+    fetchUserData();
   }, []);
 
   const handleChange = (e) => {
@@ -44,17 +74,40 @@ const Profile = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     
-    // Simulamos una llamada a la API
-    setTimeout(() => {
-      setUserData({ ...formData });
-      setIsEditing(false);
+    try {
+      const userId = localStorage.getItem('userId');
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`http://localhost:8080/api/v1/auth/profile/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phoneNumber: formData.phone
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setUserData({ ...formData, phone: data.phoneNumber || formData.phone });
+        setIsEditing(false);
+        toast.success('Datos del perfil actualizados exitosamente');
+      } else {
+        toast.error('Error al actualizar el perfil');
+      }
+    } catch (error) {
+      toast.error('Error de conexión');
+    } finally {
       setLoading(false);
-      toast.success('Datos del perfil actualizados exitosamente');
-    }, 800);
+    }
   };
 
   return (

@@ -21,6 +21,10 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     
     Page<Pedido> findByClienteId(Long clienteId, Pageable pageable);
     
+    List<Pedido> findByRestaurantId(Long restaurantId);
+    
+    Page<Pedido> findByRestaurantId(Long restaurantId, Pageable pageable);
+    
     List<Pedido> findByEstado(Pedido.EstadoPedido estado);
     
     Page<Pedido> findByEstado(Pedido.EstadoPedido estado, Pageable pageable);

@@ -3,6 +3,8 @@ package com.quickbite.Autenticacion.controller;
 import com.quickbite.Autenticacion.dto.AuthenticationRequest;
 import com.quickbite.Autenticacion.dto.AuthenticationResponse;
 import com.quickbite.Autenticacion.dto.RegisterRequest;
+import com.quickbite.Autenticacion.dto.UpdateProfileRequest;
+import com.quickbite.Autenticacion.entity.User;
 import com.quickbite.Autenticacion.service.AuthenticationService;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
@@ -123,12 +125,47 @@ public class AuthenticationController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("valid", false, "message", "No se proporcionó token"));
         }
-        
+
         try {
             return ResponseEntity.ok(Map.of("valid", true, "message", "Token válido"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("valid", false, "message", "Token inválido"));
+        }
+    }
+
+    @GetMapping("/profile/{id}")
+    @Operation(summary = "Obtener perfil de usuario", description = "Obtiene los datos del perfil de un usuario por ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Perfil obtenido exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    public ResponseEntity<User> getProfile(@PathVariable Long id) {
+        try {
+            User user = authenticationService.getUserProfile(id);
+            return ResponseEntity.ok(user);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PutMapping("/profile/{id}")
+    @Operation(summary = "Actualizar perfil de usuario", description = "Actualiza los datos del perfil de un usuario")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Perfil actualizado exitosamente"),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos"),
+        @ApiResponse(responseCode = "404", description = "Usuario no encontrado"),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor")
+    })
+    public ResponseEntity<User> updateProfile(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateProfileRequest request) {
+        try {
+            User user = authenticationService.updateProfile(id, request);
+            return ResponseEntity.ok(user);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
     
