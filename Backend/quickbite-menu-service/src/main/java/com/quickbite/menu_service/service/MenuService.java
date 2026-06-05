@@ -42,6 +42,8 @@ private final MenuItemIngredientService menuItemIngredientService;
         item.setPrice(request.getPrice());
         item.setCategory(request.getCategory());
         item.setAvailable(true); // Por defecto disponible
+        item.setImageUrl(request.getImageUrl());
+        item.setRestaurantId(request.getRestaurantId());
 
         MenuItem savedItem = menuRepository.save(item);
         return mapToResponse(savedItem);
@@ -84,7 +86,7 @@ private final MenuItemIngredientService menuItemIngredientService;
     public MenuItemResponse updateMenuItem(Long id, UpdateMenuItemRequest request) {
         MenuItem item = menuRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Plato no encontrado con el ID: " + id));
-        
+
         item.setName(request.getName());
         item.setDescription(request.getDescription());
         if (request.getPrice() != null) {
@@ -94,10 +96,13 @@ private final MenuItemIngredientService menuItemIngredientService;
         if (request.getAvailable() != null) {
             item.setAvailable(request.getAvailable());
         }
-        
+        if (request.getImageUrl() != null) {
+            item.setImageUrl(request.getImageUrl());
+        }
+
         MenuItem savedItem = menuRepository.save(item);
         log.info("Updated menu item: {}", id);
-        
+
         return mapToResponse(savedItem);
     }
 
@@ -106,7 +111,10 @@ private final MenuItemIngredientService menuItemIngredientService;
         if (!menuRepository.existsById(id)) {
             throw new ResourceNotFoundException("Plato no encontrado con el ID: " + id);
         }
-        
+
+        // Eliminar ingredientes asociados al menú
+        menuItemIngredientService.deleteIngredientsByMenuItemId(id);
+
         menuRepository.deleteById(id);
         log.info("Deleted menu item: {}", id);
     }
@@ -191,6 +199,8 @@ private final MenuItemIngredientService menuItemIngredientService;
                 .price(item.getPrice())
                 .category(item.getCategory())
                 .available(item.isAvailable())
+                .restaurantId(item.getRestaurantId())
+                .imageUrl(item.getImageUrl())
                 .build();
     }
 

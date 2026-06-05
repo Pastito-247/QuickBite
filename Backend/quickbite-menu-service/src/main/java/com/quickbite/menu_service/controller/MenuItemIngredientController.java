@@ -15,6 +15,7 @@ import java.util.List;
 @RequestMapping("/api/admin/menu-ingredients")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = "*")
 public class MenuItemIngredientController {
 
     private final MenuItemIngredientService menuItemIngredientService;

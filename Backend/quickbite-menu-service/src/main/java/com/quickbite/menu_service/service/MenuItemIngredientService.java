@@ -2,6 +2,7 @@ package com.quickbite.menu_service.service;
 
 import com.quickbite.menu_service.dto.IngredientAvailability;
 import com.quickbite.menu_service.dto.IngredientConsumption;
+import com.quickbite.menu_service.dto.IngredientDetail;
 import com.quickbite.menu_service.dto.MenuItemIngredientRequest;
 import com.quickbite.menu_service.dto.MenuItemIngredientResponse;
 import com.quickbite.menu_service.entity.MenuItem;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -66,11 +68,30 @@ public class MenuItemIngredientService {
         MenuItem menuItem = menuRepository.findById(menuItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item no encontrado con ID: " + menuItemId));
 
-        List<MenuItemIngredient> ingredients = menuItemIngredientRepository.findByMenuItem_MenuItemId(menuItemId);
-        
-        return ingredients.stream()
-                .map(this::mapToResponse)
+        List<MenuItemIngredient> ingredients = menuItemIngredientRepository.findByMenuItem_Id(menuItemId);
+
+        // Obtener IDs de ingredientes
+        List<Long> ingredientIds = ingredients.stream()
+                .map(MenuItemIngredient::getIngredientId)
                 .collect(Collectors.toList());
+
+        // Obtener detalles de ingredientes desde el servicio de inventario
+        final Map<Long, String> ingredientNames = !ingredientIds.isEmpty() ? getIngredientNamesMap(ingredientIds) : Map.of();
+
+        return ingredients.stream()
+                .map(mii -> mapToResponse(mii, ingredientNames))
+                .collect(Collectors.toList());
+    }
+
+    private Map<Long, String> getIngredientNamesMap(List<Long> ingredientIds) {
+        try {
+            List<IngredientDetail> ingredientDetails = inventoryServiceClient.getIngredientsByIds(ingredientIds);
+            return ingredientDetails.stream()
+                    .collect(Collectors.toMap(IngredientDetail::getId, IngredientDetail::getName));
+        } catch (Exception e) {
+            log.warn("Error al obtener nombres de ingredientes: {}", e.getMessage());
+            return Map.of();
+        }
     }
 
     /**
@@ -82,7 +103,7 @@ public class MenuItemIngredientService {
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item no encontrado con ID: " + menuItemId));
 
         MenuItemIngredient menuItemIngredient = menuItemIngredientRepository
-                .findByMenuItem_MenuItemId(menuItemId).stream()
+                .findByMenuItem_Id(menuItemId).stream()
                 .filter(mii -> mii.getIngredientId().equals(ingredientId))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -101,7 +122,7 @@ public class MenuItemIngredientService {
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item no encontrado con ID: " + menuItemId));
 
         MenuItemIngredient menuItemIngredient = menuItemIngredientRepository
-                .findByMenuItem_MenuItemId(menuItemId).stream()
+                .findByMenuItem_Id(menuItemId).stream()
                 .filter(mii -> mii.getIngredientId().equals(ingredientId))
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -127,7 +148,7 @@ public class MenuItemIngredientService {
                 .orElseThrow(() -> new ResourceNotFoundException("Menu item no encontrado con ID: " + menuItemId));
 
         // Eliminar ingredientes existentes
-        menuItemIngredientRepository.deleteByMenuItem_MenuItemId(menuItemId);
+        menuItemIngredientRepository.deleteByMenuItem_Id(menuItemId);
 
         // Agregar nuevos ingredientes
         List<MenuItemIngredient> newIngredients = requests.stream()
@@ -154,7 +175,7 @@ public class MenuItemIngredientService {
      * Obtener IDs de ingredientes de un menu item (para AvailabilityService)
      */
     public List<Long> getIngredientIdsForMenuItem(Long menuItemId) {
-        return menuItemIngredientRepository.findByMenuItem_MenuItemId(menuItemId).stream()
+        return menuItemIngredientRepository.findByMenuItem_Id(menuItemId).stream()
                 .map(MenuItemIngredient::getIngredientId)
                 .collect(Collectors.toList());
     }
@@ -163,7 +184,7 @@ public class MenuItemIngredientService {
      * Obtener ingredientes con cantidades de un menu item (para descuento de stock)
      */
     public List<MenuItemIngredient> getIngredientsWithQuantities(Long menuItemId) {
-        return menuItemIngredientRepository.findByMenuItem_MenuItemId(menuItemId);
+        return menuItemIngredientRepository.findByMenuItem_Id(menuItemId);
     }
 
     /**
@@ -204,7 +225,7 @@ public class MenuItemIngredientService {
      */
     public boolean hasSufficientStock(Long menuItemId, Integer quantity) {
         List<MenuItemIngredient> ingredients = getIngredientsWithQuantities(menuItemId);
-        
+
         if (ingredients.isEmpty()) {
             return true; // Si no tiene ingredientes, se permite
         }
@@ -223,9 +244,9 @@ public class MenuItemIngredientService {
                         .findFirst()
                         .orElse(null);
 
-                if (availability == null || !availability.isAvailable() || 
+                if (availability == null || !availability.isAvailable() ||
                     availability.getCurrentStock() < (mii.getQuantity() * quantity)) {
-                    log.warn("Ingrediente {} sin suficiente stock para menu item {}", 
+                    log.warn("Ingrediente {} sin suficiente stock para menu item {}",
                             mii.getIngredientId(), menuItemId);
                     return false;
                 }
@@ -238,15 +259,31 @@ public class MenuItemIngredientService {
         }
     }
 
-    private MenuItemIngredientResponse mapToResponse(MenuItemIngredient menuItemIngredient) {
+    /**
+     * Eliminar todos los ingredientes de un menu item
+     */
+    @Transactional
+    public void deleteIngredientsByMenuItemId(Long menuItemId) {
+        menuItemIngredientRepository.deleteByMenuItem_Id(menuItemId);
+        log.info("Eliminados todos los ingredientes del menu item {}", menuItemId);
+    }
+
+    private MenuItemIngredientResponse mapToResponse(MenuItemIngredient menuItemIngredient, Map<Long, String> ingredientNames) {
+        String ingredientName = ingredientNames.getOrDefault(menuItemIngredient.getIngredientId(),
+                "Ingrediente " + menuItemIngredient.getIngredientId());
+
         return MenuItemIngredientResponse.builder()
                 .id(menuItemIngredient.getId())
                 .menuItemId(menuItemIngredient.getMenuItem() != null ? menuItemIngredient.getMenuItem().getId() : null)
                 .ingredientId(menuItemIngredient.getIngredientId())
-                .ingredientName("Ingrediente " + menuItemIngredient.getIngredientId()) // TODO: Obtener nombre real del inventario
+                .ingredientName(ingredientName)
                 .quantity(menuItemIngredient.getQuantity())
                 .unit(menuItemIngredient.getUnit())
                 .isOptional(menuItemIngredient.getIsOptional())
                 .build();
+    }
+
+    private MenuItemIngredientResponse mapToResponse(MenuItemIngredient menuItemIngredient) {
+        return mapToResponse(menuItemIngredient, Map.of());
     }
 }

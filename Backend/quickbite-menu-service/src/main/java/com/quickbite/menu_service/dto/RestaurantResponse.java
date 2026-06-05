@@ -19,6 +19,7 @@ public class RestaurantResponse {
     private String phone;
     private Long ownerId;
     private Boolean active;
+    private String imageUrl;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

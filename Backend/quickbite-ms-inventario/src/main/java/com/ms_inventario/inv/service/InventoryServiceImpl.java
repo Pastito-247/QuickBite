@@ -107,7 +107,12 @@ public class InventoryServiceImpl implements InventoryService {
     public List<Ingredient> getAllActiveIngredients() {
         return inventoryRepository.findAllActiveIngredients();
     }
-    
+
+    @Override
+    public List<Ingredient> getIngredientsByIds(List<Long> ids) {
+        return inventoryRepository.findAllById(ids);
+    }
+
     @Override
     public void deleteIngredient(Long id) {
         log.info("Deleting ingredient with ID: {}", id);

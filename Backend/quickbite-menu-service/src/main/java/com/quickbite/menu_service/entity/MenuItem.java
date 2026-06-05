@@ -33,4 +33,6 @@ public class MenuItem {
 
     @Column(name = "restaurant_id")
     private Long restaurantId;
+
+    private String imageUrl;
 }

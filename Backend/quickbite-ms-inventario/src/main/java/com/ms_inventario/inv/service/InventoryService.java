@@ -19,7 +19,9 @@ public interface InventoryService {
     Optional<Ingredient> getIngredient(Long id);
     
     List<Ingredient> getAllActiveIngredients();
-    
+
+    List<Ingredient> getIngredientsByIds(List<Long> ids);
+
     Page<Ingredient> getAllActiveIngredientsPaginated(Pageable pageable);
     
     void deleteIngredient(Long id);

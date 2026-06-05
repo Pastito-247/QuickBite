@@ -19,4 +19,6 @@ public class UpdateMenuItemRequest {
     private String category;
 
     private Boolean available;
+
+    private String imageUrl;
 }

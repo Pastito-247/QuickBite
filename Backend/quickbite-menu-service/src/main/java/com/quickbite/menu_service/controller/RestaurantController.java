@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,9 +40,13 @@ public class RestaurantController {
     }
 
     @GetMapping("/owner/{ownerId}")
-    public RestaurantResponse getRestaurantByOwnerId(@PathVariable Long ownerId) {
+    public ResponseEntity<RestaurantResponse> getRestaurantByOwnerId(@PathVariable Long ownerId) {
         log.info("Getting restaurant for owner ID: {}", ownerId);
-        return restaurantService.getRestaurantByOwnerId(ownerId);
+        RestaurantResponse restaurant = restaurantService.getRestaurantByOwnerId(ownerId);
+        if (restaurant == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(restaurant);
     }
 
     @PostMapping

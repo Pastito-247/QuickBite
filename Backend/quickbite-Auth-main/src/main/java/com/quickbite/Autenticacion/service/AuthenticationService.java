@@ -194,6 +194,12 @@ public class AuthenticationService {
         if (request.getPhoneNumber() != null) {
             user.setPhoneNumber(request.getPhoneNumber());
         }
+        if (request.getProfileImage() != null) {
+            user.setProfileImage(request.getProfileImage());
+        }
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
+        }
 
         user.setUpdatedAt(java.time.LocalDateTime.now());
         return userRepository.save(user);

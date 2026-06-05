@@ -24,4 +24,8 @@ public class UpdateProfileRequest {
 
     @Pattern(regexp = "^[+]?[0-9]{8,15}$", message = "Teléfono inválido")
     private String phoneNumber;
+
+    private String profileImage;
+
+    private String address;
 }

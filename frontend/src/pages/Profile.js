@@ -27,7 +27,7 @@ const Profile = () => {
         const token = localStorage.getItem('token');
         if (!userId || !token) return;
 
-        const response = await fetch(`http://localhost:8080/api/v1/auth/profile/${userId}`, {
+        const response = await fetch(`http://localhost:8081/api/v1/auth/profile/${userId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -40,8 +40,8 @@ const Profile = () => {
             lastName: data.lastName || '',
             email: data.email || '',
             phone: data.phoneNumber || '',
-            address: '', // No address field in User yet, mocking it
-            profileImage: null,
+            address: data.address || '',
+            profileImage: data.profileImage || null,
             joinDate: new Date(data.createdAt).toLocaleDateString() || '2026',
             favoriteRestaurant: 'Burger Queen',
             totalOrders: 0
@@ -66,23 +66,26 @@ const Profile = () => {
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Simulamos la subida de una imagen usando un objeto URL local
-      const imageUrl = URL.createObjectURL(file);
-      setUserData({ ...userData, profileImage: imageUrl });
-      setFormData({ ...formData, profileImage: imageUrl });
-      toast.success('Foto de perfil actualizada');
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        setUserData({ ...userData, profileImage: base64String });
+        setFormData({ ...formData, profileImage: base64String });
+        toast.success('Foto de perfil actualizada');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       const userId = localStorage.getItem('userId');
       const token = localStorage.getItem('token');
-      
-      const response = await fetch(`http://localhost:8080/api/v1/auth/profile/${userId}`, {
+
+      const response = await fetch(`http://localhost:8081/api/v1/auth/profile/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -91,7 +94,10 @@ const Profile = () => {
         body: JSON.stringify({
           firstName: formData.firstName,
           lastName: formData.lastName,
-          phoneNumber: formData.phone
+          email: formData.email,
+          phoneNumber: formData.phone,
+          address: formData.address,
+          profileImage: formData.profileImage
         })
       });
 
@@ -258,7 +264,7 @@ const Profile = () => {
                     </div>
 
                     <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">Dirección de Envío Principal</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 pt-3 pointer-events-none">
                           <MapPin className="h-5 w-5 text-gray-400" />

@@ -37,6 +37,8 @@ public class Restaurant {
     @Builder.Default
     private Boolean active = true;
 
+    private String imageUrl;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

@@ -41,9 +41,9 @@ public class RestaurantService {
     }
 
     public RestaurantResponse getRestaurantByOwnerId(Long ownerId) {
-        Restaurant restaurant = restaurantRepository.findByOwnerId(ownerId)
-                .orElseThrow(() -> new ResourceNotFoundException("Restaurante no encontrado para el owner ID: " + ownerId));
-        return mapToResponse(restaurant);
+        return restaurantRepository.findByOwnerId(ownerId)
+                .map(this::mapToResponse)
+                .orElse(null);
     }
 
     @Transactional
@@ -55,8 +55,9 @@ public class RestaurantService {
                 .phone(request.getPhone())
                 .ownerId(request.getOwnerId())
                 .active(true)
+                .imageUrl(request.getImageUrl())
                 .build();
-        
+
         Restaurant saved = restaurantRepository.save(restaurant);
         log.info("Restaurant created with ID: {}", saved.getId());
         return mapToResponse(saved);
@@ -67,7 +68,7 @@ public class RestaurantService {
         log.info("Updating restaurant with ID: {}", id);
         Restaurant restaurant = restaurantRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Restaurante no encontrado con ID: " + id));
-        
+
         restaurant.setName(request.getName());
         restaurant.setAddress(request.getAddress());
         restaurant.setPhone(request.getPhone());
@@ -77,7 +78,10 @@ public class RestaurantService {
         if (request.getActive() != null) {
             restaurant.setActive(request.getActive());
         }
-        
+        if (request.getImageUrl() != null) {
+            restaurant.setImageUrl(request.getImageUrl());
+        }
+
         Restaurant saved = restaurantRepository.save(restaurant);
         log.info("Restaurant updated: {}", id);
         return mapToResponse(saved);
@@ -101,6 +105,7 @@ public class RestaurantService {
                 .phone(restaurant.getPhone())
                 .ownerId(restaurant.getOwnerId())
                 .active(restaurant.getActive())
+                .imageUrl(restaurant.getImageUrl())
                 .createdAt(restaurant.getCreatedAt())
                 .updatedAt(restaurant.getUpdatedAt())
                 .build();

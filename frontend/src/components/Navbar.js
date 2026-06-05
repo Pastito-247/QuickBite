@@ -24,18 +24,6 @@ const Navbar = () => {
     const baseLinks = [
       { path: '/', label: 'Inicio', icon: null },
       { path: '/restaurants', label: 'Restaurantes', icon: null },
-      { 
-        path: '/menu', 
-        label: 'Menú', 
-        icon: null,
-        dropdown: [
-          { path: '/menu?category=hamburguesas', label: 'Hamburguesas' },
-          { path: '/menu?category=pizzas', label: 'Pizzas' },
-          { path: '/menu?category=mexicana', label: 'Mexicana' },
-          { path: '/menu?category=sushi', label: 'Sushi' },
-          { path: '/menu', label: 'Ver Todo' }
-        ]
-      },
     ];
 
     if (!userRole || userRole === 'CLIENT') {
@@ -115,22 +103,6 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {(!userRole || userRole === 'CLIENT') && (
-              <button 
-                onClick={() => {
-                  if (!userRole) {
-                    toast.info('Debes iniciar sesión para usar el carrito');
-                    navigate('/login');
-                  } else {
-                    navigate('/menu');
-                  }
-                }}
-                className="p-2 text-gray-500 hover:text-primary transition-colors" 
-                title="Ver Carrito"
-              >
-                <ShoppingCart className="h-6 w-6" />
-              </button>
-            )}
             <span className="text-sm text-gray-500 font-medium hidden sm:block">
               {userRole ? `Rol: ${userRole === 'CLIENT' ? 'Cliente' : 
                     userRole === 'KITCHEN' ? 'Cocina' : 'Administrador'}` : ''}

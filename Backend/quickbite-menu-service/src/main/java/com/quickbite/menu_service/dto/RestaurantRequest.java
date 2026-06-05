@@ -24,6 +24,8 @@ public class RestaurantRequest {
     
     @NotNull(message = "El ID del dueño es requerido")
     private Long ownerId;
-    
+
     private Boolean active;
+
+    private String imageUrl;
 }
