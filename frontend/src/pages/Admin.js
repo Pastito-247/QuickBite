@@ -48,11 +48,15 @@ const Admin = () => {
   // Modal State for Menu
   const [isMenuModalOpen, setIsMenuModalOpen] = useState(false);
   const [editingMenuItem, setEditingMenuItem] = useState(null);
+  const [restaurants, setRestaurants] = useState([]);
+  const [selectedRestaurantFilter, setSelectedRestaurantFilter] = useState('');
   const [menuFormData, setMenuFormData] = useState({
     name: '',
     price: 0,
     category: 'Hamburguesas',
-    available: true
+    available: true,
+    imageUrl: '',
+    restaurantId: ''
   });
 
   // Modal State for Menu Ingredients
@@ -73,7 +77,8 @@ const Admin = () => {
     name: 'Mi Restaurante',
     address: 'Dirección no definida',
     phone: '+56900000000',
-    ownerId: null
+    ownerId: null,
+    imageUrl: ''
   });
   const [salesHistory, setSalesHistory] = useState([]);
   
@@ -82,14 +87,16 @@ const Admin = () => {
     loadInventory(); // Always load inventory so the dashboard has data
     if (activeTab === 'menu') {
       loadMenu();
+      loadRestaurants();
     }
     if (activeTab === 'restaurant') {
       loadRestaurant();
+      loadRestaurants();
     }
     if (activeTab === 'sales') {
       loadSalesHistory();
     }
-  }, [activeTab]);
+  }, [activeTab, selectedRestaurantFilter]);
 
   const loadDashboardData = async () => {
     try {
@@ -109,7 +116,7 @@ const Admin = () => {
 
   const loadInventory = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/inventory');
+      const response = await fetch('http://localhost:8082/api/inventory');
       if (response.ok) {
         const data = await response.json();
         setInventory(data);
@@ -158,8 +165,8 @@ const Admin = () => {
     e.preventDefault();
     try {
       const url = editingInventoryItem 
-        ? `http://localhost:8080/api/inventory/${editingInventoryItem}`
-        : 'http://localhost:8080/api/inventory';
+        ? `http://localhost:8082/api/inventory/${editingInventoryItem}`
+        : 'http://localhost:8082/api/inventory';
       
       const method = editingInventoryItem ? 'PUT' : 'POST';
 
@@ -186,7 +193,7 @@ const Admin = () => {
   const deleteInventoryItem = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este producto?')) return;
     try {
-      const response = await fetch(`http://localhost:8080/api/inventory/${id}`, {
+      const response = await fetch(`http://localhost:8082/api/inventory/${id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -209,15 +216,34 @@ const Admin = () => {
 
   const loadMenu = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/menu');
+      const response = await fetch('http://localhost:8083/api/admin/menu/all');
       if (response.ok) {
         const data = await response.json();
-        setMenu(data);
+        if (selectedRestaurantFilter) {
+          const filtered = data.filter(item => item.restaurantId === parseInt(selectedRestaurantFilter));
+          setMenu(filtered);
+        } else {
+          setMenu(data);
+        }
       } else {
         toast.error('Error al cargar menú');
       }
     } catch (error) {
       toast.error('Error al cargar menú');
+    }
+  };
+
+  const loadRestaurants = async () => {
+    try {
+      const response = await fetch('http://localhost:8083/api/restaurants');
+      if (response.ok) {
+        const data = await response.json();
+        setRestaurants(data);
+      } else {
+        toast.error('Error al cargar restaurantes');
+      }
+    } catch (error) {
+      toast.error('Error al cargar restaurantes');
     }
   };
 
@@ -228,7 +254,9 @@ const Admin = () => {
         name: item.name,
         price: item.price,
         category: item.category,
-        available: item.available
+        available: item.available,
+        imageUrl: item.imageUrl || '',
+        restaurantId: item.restaurantId || ''
       });
     } else {
       setEditingMenuItem(null);
@@ -236,7 +264,9 @@ const Admin = () => {
         name: '',
         price: 0,
         category: 'Hamburguesas',
-        available: true
+        available: true,
+        imageUrl: '',
+        restaurantId: ''
       });
     }
     setIsMenuModalOpen(true);
@@ -248,15 +278,17 @@ const Admin = () => {
     e.preventDefault();
     try {
       const url = editingMenuItem
-        ? `http://localhost:8080/api/admin/menu/${editingMenuItem}`
-        : 'http://localhost:8080/api/menu';
+        ? `http://localhost:8083/api/admin/menu/${editingMenuItem}`
+        : 'http://localhost:8083/api/menu';
       const method = editingMenuItem ? 'PUT' : 'POST';
       const payload = {
         name: menuFormData.name,
         description: menuFormData.description || '',
         price: menuFormData.price,
         category: menuFormData.category,
-        available: menuFormData.available
+        available: menuFormData.available,
+        imageUrl: menuFormData.imageUrl || null,
+        restaurantId: menuFormData.restaurantId ? parseInt(menuFormData.restaurantId) : null
       };
       const response = await fetch(url, {
         method,
@@ -311,7 +343,7 @@ const Admin = () => {
 
   const loadMenuItemIngredients = async (menuItemId) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/menu-ingredients/${menuItemId}`);
+      const response = await fetch(`http://localhost:8083/api/admin/menu-ingredients/${menuItemId}`);
       if (response.ok) {
         const data = await response.json();
         setMenuItemIngredients(data);
@@ -330,7 +362,7 @@ const Admin = () => {
     
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}`,
+        `http://localhost:8083/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -358,7 +390,7 @@ const Admin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}/${ingredientId}`,
+        `http://localhost:8083/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}/${ingredientId}`,
         { method: 'DELETE' }
       );
       if (!response.ok) throw new Error(`Error ${response.status}`);
@@ -378,7 +410,7 @@ const Admin = () => {
         toast.error('No hay usuario logueado');
         return;
       }
-      const response = await fetch(`http://localhost:8080/api/restaurants/owner/${userId}`);
+      const response = await fetch(`http://localhost:8083/api/restaurants/owner/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setRestaurant({
@@ -409,20 +441,21 @@ const Admin = () => {
         address: restaurant.address,
         phone: restaurant.phone,
         ownerId: restaurant.ownerId || parseInt(userId),
-        active: true
+        active: true,
+        imageUrl: restaurant.imageUrl || null
       };
 
       let response;
       if (restaurant.id) {
         // Update existing restaurant
-        response = await fetch(`http://localhost:8080/api/restaurants/${restaurant.id}`, {
+        response = await fetch(`http://localhost:8083/api/restaurants/${restaurant.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } else {
         // Create new restaurant
-        response = await fetch('http://localhost:8080/api/restaurants', {
+        response = await fetch('http://localhost:8083/api/restaurants', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -440,9 +473,40 @@ const Admin = () => {
         ownerId: data.ownerId
       });
       toast.success('Restaurante guardado exitosamente');
+      loadRestaurants();
     } catch (error) {
       console.error('Error saving restaurant:', error);
       toast.error('Error al guardar restaurante');
+    }
+  };
+
+  const deleteRestaurant = async (id) => {
+    if (!window.confirm('¿Estás seguro de eliminar este restaurante?')) {
+      return;
+    }
+    try {
+      const response = await fetch(`http://localhost:8083/api/restaurants/${id}`, {
+        method: 'DELETE'
+      });
+      if (response.ok) {
+        toast.success('Restaurante eliminado exitosamente');
+        loadRestaurants();
+        if (restaurant.id === id) {
+          setRestaurant({
+            id: null,
+            name: '',
+            address: '',
+            phone: '',
+            ownerId: null,
+            imageUrl: ''
+          });
+        }
+      } else {
+        toast.error('Error al eliminar restaurante');
+      }
+    } catch (error) {
+      console.error('Error deleting restaurant:', error);
+      toast.error('Error al eliminar restaurante');
     }
   };
 
@@ -758,17 +822,44 @@ const Admin = () => {
     <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-secondary-900">Gestión de Menú</h2>
-        <button onClick={() => openMenuModal()} className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-600">
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar nuevo
-        </button>
+        <div className="flex space-x-2">
+          <select
+            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+            value={selectedRestaurantFilter}
+            onChange={(e) => setSelectedRestaurantFilter(e.target.value)}
+          >
+            <option value="">Todos los restaurantes</option>
+            {restaurants.map(restaurant => (
+              <option key={restaurant.id} value={restaurant.id}>
+                {restaurant.name}
+              </option>
+            ))}
+          </select>
+          <button onClick={() => openMenuModal()} className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-600">
+            <Plus className="h-4 w-4 mr-2" />
+            Agregar nuevo
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {menu.map(item => (
           <div key={item.id} className="bg-white rounded-lg shadow-md overflow-hidden">
-            <div className="h-48 bg-gray-200 flex items-center justify-center">
-              <ChefHat className="h-12 w-12 text-gray-400" />
+            <div className="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+              {item.imageUrl ? (
+                <img
+                  src={item.imageUrl}
+                  alt={item.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className="absolute inset-0 flex items-center justify-center" style={{ display: item.imageUrl ? 'none' : 'flex' }}>
+                <ChefHat className="h-12 w-12 text-gray-400" />
+              </div>
             </div>
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
@@ -856,6 +947,33 @@ const Admin = () => {
                     onChange={(e) => setMenuFormData({...menuFormData, price: parseInt(e.target.value)})}
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Restaurante</label>
+                <select
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                  value={menuFormData.restaurantId}
+                  onChange={(e) => setMenuFormData({...menuFormData, restaurantId: e.target.value})}
+                >
+                  <option value="">Seleccionar restaurante...</option>
+                  {restaurants.map(restaurant => (
+                    <option key={restaurant.id} value={restaurant.id}>
+                      {restaurant.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">URL de Imagen (opcional)</label>
+                <input
+                  type="url"
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                  value={menuFormData.imageUrl}
+                  onChange={(e) => setMenuFormData({...menuFormData, imageUrl: e.target.value})}
+                  placeholder="https://ejemplo.com/imagen.jpg"
+                />
               </div>
 
               <div className="flex items-center mt-4">
@@ -1021,8 +1139,83 @@ const Admin = () => {
 
   const renderRestaurant = () => (
     <div>
-      <h2 className="text-2xl font-bold text-secondary-900 mb-6">Mi Restaurante</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-secondary-900">Gestión de Restaurantes</h2>
+        <button onClick={() => {
+          setRestaurant({
+            id: null,
+            name: '',
+            address: '',
+            phone: '',
+            ownerId: null,
+            imageUrl: ''
+          });
+        }} className="flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-600">
+          <Plus className="h-4 w-4 mr-2" />
+          Agregar nuevo
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {restaurants.map(restaurantItem => (
+          <div key={restaurantItem.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="h-48 bg-gray-200 flex items-center justify-center relative overflow-hidden">
+              {restaurantItem.imageUrl ? (
+                <img
+                  src={restaurantItem.imageUrl}
+                  alt={restaurantItem.name}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className="absolute inset-0 flex items-center justify-center" style={{ display: restaurantItem.imageUrl ? 'none' : 'flex' }}>
+                <Store className="h-12 w-12 text-gray-400" />
+              </div>
+            </div>
+            <div className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="text-lg font-semibold text-secondary-900">{restaurantItem.name}</h3>
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  restaurantItem.active
+                    ? 'bg-accent-100 text-accent-800'
+                    : 'bg-alert-100 text-alert-800'
+                }`}>
+                  {restaurantItem.active ? 'Activo' : 'Inactivo'}
+                </span>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">{restaurantItem.address}</p>
+              <p className="text-sm text-gray-600 mb-4">{restaurantItem.phone}</p>
+              <div className="flex space-x-2">
+                <button onClick={() => {
+                  setRestaurant({
+                    id: restaurantItem.id,
+                    name: restaurantItem.name,
+                    address: restaurantItem.address,
+                    phone: restaurantItem.phone,
+                    ownerId: restaurantItem.ownerId,
+                    imageUrl: restaurantItem.imageUrl || ''
+                  });
+                }} className="flex-1 flex items-center justify-center px-3 py-2 bg-primary text-white rounded-md hover:bg-primary-600">
+                  <Edit className="h-4 w-4 mr-1" />
+                  Editar
+                </button>
+                <button onClick={() => deleteRestaurant(restaurantItem.id)} className="flex-1 flex items-center justify-center px-3 py-2 bg-alert text-white rounded-md hover:bg-alert-600">
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 max-w-2xl">
+        <h3 className="text-lg font-semibold text-secondary-900 mb-4">
+          {restaurant.id ? 'Editar Restaurante' : 'Crear Nuevo Restaurante'}
+        </h3>
         <form onSubmit={saveRestaurant}>
           <div className="space-y-4">
             <div>
@@ -1055,13 +1248,41 @@ const Admin = () => {
                 onChange={(e) => setRestaurant({...restaurant, phone: e.target.value})}
               />
             </div>
-            <div className="pt-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">URL de Imagen (Logo) - Opcional</label>
+              <input
+                type="url"
+                className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
+                value={restaurant.imageUrl || ''}
+                onChange={(e) => setRestaurant({...restaurant, imageUrl: e.target.value})}
+                placeholder="https://ejemplo.com/logo.jpg"
+              />
+            </div>
+            <div className="pt-4 flex gap-2">
               <button
                 type="submit"
                 className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-600"
               >
-                Guardar Cambios
+                {restaurant.id ? 'Actualizar Restaurante' : 'Crear Restaurante'}
               </button>
+              {restaurant.id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRestaurant({
+                      id: null,
+                      name: '',
+                      address: '',
+                      phone: '',
+                      ownerId: null,
+                      imageUrl: ''
+                    });
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                >
+                  Cancelar
+                </button>
+              )}
             </div>
           </div>
         </form>

@@ -39,7 +39,243 @@ QuickBite es un sistema de gestión de restaurantes basado en microservicios que
 
 ---
 
-## 🚀 Instalación y Configuración
+## � Instalación en Otro PC Local
+
+### **Paso 1: Clonar el Repositorio**
+```bash
+# Clonar el repositorio desde GitHub
+git clone https://github.com/[tu-usuario]/QuickBite.git
+cd QuickBite
+```
+
+### **Paso 2: Instalar Requisitos Previos**
+
+#### **Windows**
+1. **Node.js 18+**
+   - Descargar desde: https://nodejs.org/
+   - Verificar instalación: `node --version`
+
+2. **Java 17+**
+   - Descargar desde: https://adoptium.net/
+   - Verificar instalación: `java -version`
+
+3. **Maven 3.6+**
+   - Descargar desde: https://maven.apache.org/download.cgi
+   - Configurar variables de entorno:
+     - `MAVEN_HOME`: ruta de instalación de Maven
+     - Agregar `%MAVEN_HOME%\bin` al PATH
+   - Verificar instalación: `mvn --version`
+
+4. **MySQL 8.0+**
+   - Descargar desde: https://dev.mysql.com/downloads/mysql/
+   - Instalar y configurar contraseña de root (por defecto: `root`)
+   - Verificar instalación: `mysql --version`
+
+5. **Git**
+   - Descargar desde: https://git-scm.com/download/win
+   - Verificar instalación: `git --version`
+
+### **Paso 3: Configurar Base de Datos MySQL**
+
+```bash
+# Iniciar MySQL (si no está corriendo)
+# Windows: Services.msc → MySQL → Iniciar
+
+# Crear bases de datos necesarias
+mysql -u root -p
+
+# Ejecutar los siguientes comandos en MySQL:
+CREATE DATABASE quickbite_auth;
+CREATE DATABASE quickbite_menu;
+CREATE DATABASE quickbite_inventory;
+CREATE DATABASE quickbite_pedidos;
+CREATE DATABASE quickbite_kitchen;
+CREATE DATABASE quickbite_notification;
+CREATE DATABASE quickbite_payment;
+
+# Salir de MySQL
+exit;
+```
+
+### **Paso 4: Configurar Microservicios**
+
+Los archivos de configuración ya están preconfigurados con las siguientes credenciales:
+- **Usuario MySQL**: `root`
+- **Contraseña MySQL**: `root`
+- **Puertos**: 8081 (Auth), 8082 (Inventory), 8083 (Menu), 8080 (Pedidos), 8084 (Kitchen), 8085 (Notification), 8086 (Payment)
+
+Si necesitas cambiar las credenciales, edita los archivos `application.properties` en cada microservicio:
+```bash
+# Ejemplo para cambiar contraseña de MySQL
+cd Backend/quickbite-Auth-main/src/main/resources
+# Editar application.properties y cambiar:
+# spring.datasource.password=tu_nueva_contraseña
+```
+
+### **Paso 5: Instalar Dependencias del Frontend**
+
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+### **Paso 6: Compilar Microservicios**
+
+```bash
+# Compilar todos los microservicios (puede tardar varios minutos)
+cd Backend/quickbite-Auth-main
+mvn clean install -DskipTests
+cd ../quickbite-ms-inventario
+mvn clean install -DskipTests
+cd ../quickbite-menu-service
+mvn clean install -DskipTests
+cd ../quickbite-pedidos-main
+mvn clean install -DskipTests
+cd ../quickbite-kitchen-service
+mvn clean install -DskipTests
+cd ../quickbite-notification-service
+mvn clean install -DskipTests
+cd ../quickbite-payment-service
+mvn clean install -DskipTests
+cd ../quickbite-eureka-server
+mvn clean install -DskipTests
+cd ../quickbite-api-gateway
+mvn clean install -DskipTests
+cd ../..
+```
+
+### **Paso 7: Iniciar el Sistema**
+
+#### **Opción 1: Usar Script Automático (Recomendado)**
+```bash
+# Windows
+START_MYSQL.bat
+```
+
+Este script iniciará automáticamente:
+1. Eureka Server (puerto 8761)
+2. API Gateway (puerto 8080)
+3. Auth Service (puerto 8081)
+4. Inventory Service (puerto 8082)
+5. Menu Service (puerto 8083)
+6. Pedidos Service (puerto 8080)
+7. Kitchen Service (puerto 8084)
+8. Notification Service (puerto 8085)
+9. Payment Service (puerto 8086)
+10. Frontend (puerto 3000)
+
+#### **Opción 2: Iniciar Manualmente**
+
+**Terminal 1 - Eureka Server:**
+```bash
+cd Backend/quickbite-eureka-server
+mvn spring-boot:run
+```
+
+**Terminal 2 - API Gateway:**
+```bash
+cd Backend/quickbite-api-gateway
+mvn spring-boot:run
+```
+
+**Terminal 3 - Auth Service:**
+```bash
+cd Backend/quickbite-Auth-main
+mvn spring-boot:run
+```
+
+**Terminal 4 - Inventory Service:**
+```bash
+cd Backend/quickbite-ms-inventario
+mvn spring-boot:run
+```
+
+**Terminal 5 - Menu Service:**
+```bash
+cd Backend/quickbite-menu-service
+mvn spring-boot:run
+```
+
+**Terminal 6 - Pedidos Service:**
+```bash
+cd Backend/quickbite-pedidos-main
+mvn spring-boot:run
+```
+
+**Terminal 7 - Kitchen Service:**
+```bash
+cd Backend/quickbite-kitchen-service
+mvn spring-boot:run
+```
+
+**Terminal 8 - Notification Service:**
+```bash
+cd Backend/quickbite-notification-service
+mvn spring-boot:run
+```
+
+**Terminal 9 - Payment Service:**
+```bash
+cd Backend/quickbite-payment-service
+mvn spring-boot:run
+```
+
+**Terminal 10 - Frontend:**
+```bash
+cd frontend
+npm start
+```
+
+### **Paso 8: Verificar Funcionamiento**
+
+1. **Abrir navegador en:** http://localhost:3000
+2. **Verificar Eureka Dashboard:** http://localhost:8761
+3. **Probar login con credenciales:**
+   - Admin: `admin@quickbite.com` / `admin123`
+   - Cocina: `kitchen@quickbite.com` / `kitchen123`
+   - Cliente: `customer@quickbite.com` / `customer123`
+
+### **Paso 9: Solución de Problemas Comunes**
+
+#### **Error: Puerto ya en uso**
+```bash
+# Verificar qué proceso está usando el puerto
+netstat -ano | findstr :[puerto]
+
+# Matar el proceso (reemplazar [PID] con el ID del proceso)
+taskkill /PID [PID] /F
+```
+
+#### **Error: MySQL no conecta**
+```bash
+# Verificar que MySQL esté corriendo
+mysql --version
+
+# Si no está corriendo, iniciarlo desde Services.msc
+# O desde línea de comandos:
+net start MySQL80
+```
+
+#### **Error: Maven no encontrado**
+```bash
+# Verificar que Maven esté instalado
+mvn --version
+
+# Si no está instalado, descargar y configurar variables de entorno
+```
+
+#### **Error: Node.js no encontrado**
+```bash
+# Verificar que Node.js esté instalado
+node --version
+
+# Si no está instalado, descargar e instalar desde nodejs.org
+```
+
+---
+
+## �🚀 Instalación y Configuración
 
 ### **Método 1: Evaluación con MySQL (Recomendado)**
 ```bash

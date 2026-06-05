@@ -72,24 +72,23 @@ public class PedidoService {
                 .map(this::convertToItemPedido)
                 .collect(Collectors.toList());
 
+        // Validar stock antes de crear el pedido
+        for (ItemPedido item : items) {
+            System.out.println("DEBUG: Validating stock for product ID: " + item.getProductoId() + ", quantity: " + item.getCantidad());
+            Map<String, Object> stockValidation = menuServiceClient.validateStock(item.getProductoId(), item.getCantidad());
+            System.out.println("DEBUG: Stock validation result: " + stockValidation);
+            boolean hasStock = (Boolean) stockValidation.get("hasSufficientStock");
+            System.out.println("DEBUG: Has sufficient stock: " + hasStock);
+            if (!hasStock) {
+                log.error("No hay suficiente stock para el producto ID: {}", item.getProductoId());
+                throw new RuntimeException("No hay suficiente stock para el producto: " + item.getProductoId());
+            }
+        }
+
         items.forEach(item -> item.setPedido(pedido));
         pedido.setItems(items);
 
         Pedido pedidoGuardado = pedidoRepository.save(pedido);
-
-        // Consumir ingredientes después de crear el pedido
-        for (ItemPedido item : items) {
-            try {
-                menuServiceClient.consumeIngredients(
-                        item.getProductoId(),
-                        item.getCantidad()
-                );
-                log.info("Ingredientes consumidos para item {}", item.getProductoId());
-            } catch (Exception e) {
-                log.error("Error consumiendo ingredientes para item {}: {}", item.getProductoId(), e.getMessage());
-                // No fallar el pedido si falla el consumo de ingredientes (fallback)
-            }
-        }
 
         log.info("Pedido creado exitosamente con número: {}", pedidoGuardado.getNumeroPedido());
         return PedidoResponse.fromEntity(pedidoGuardado);
@@ -168,19 +167,42 @@ public class PedidoService {
     }
     
     public PedidoResponse actualizarEstadoPedido(Long id, Pedido.EstadoPedido nuevoEstado) {
+        System.out.println("DEBUG: actualizarEstadoPedido called with ID: " + id + ", new state: " + nuevoEstado);
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new PedidoNotFoundException("Pedido no encontrado con ID: " + id));
-        
-        log.info("Actualizando estado del pedido {} de {} a {}", 
+
+        System.out.println("DEBUG: Current state: " + pedido.getEstado() + ", new state: " + nuevoEstado);
+        log.info("Actualizando estado del pedido {} de {} a {}",
                 pedido.getNumeroPedido(), pedido.getEstado(), nuevoEstado);
-        
+
+        // Consumir ingredientes cuando el pedido pasa a EN_PREPARACION
+        if (nuevoEstado == Pedido.EstadoPedido.EN_PREPARACION && pedido.getEstado() != Pedido.EstadoPedido.EN_PREPARACION) {
+            System.out.println("DEBUG: Consuming ingredients for order " + pedido.getNumeroPedido());
+            for (ItemPedido item : pedido.getItems()) {
+                try {
+                    System.out.println("DEBUG: Consuming ingredients for item " + item.getProductoId() + ", quantity: " + item.getCantidad());
+                    menuServiceClient.consumeIngredients(
+                            item.getProductoId(),
+                            item.getCantidad()
+                    );
+                    log.info("Ingredientes consumidos para item {} del pedido {}", item.getProductoId(), pedido.getNumeroPedido());
+                    System.out.println("DEBUG: Ingredients consumed successfully for item " + item.getProductoId());
+                } catch (Exception e) {
+                    log.error("Error consumiendo ingredientes para item {} del pedido {}: {}", item.getProductoId(), pedido.getNumeroPedido(), e.getMessage());
+                    System.err.println("ERROR: Error consuming ingredients for item " + item.getProductoId() + ": " + e.getMessage());
+                    e.printStackTrace();
+                    // No fallar el cambio de estado si falla el consumo de ingredientes (fallback)
+                }
+            }
+        }
+
         pedido.setEstado(nuevoEstado);
-        
+
         // Si el pedido se marca como entregado, registrar la fecha de entrega
         if (nuevoEstado == Pedido.EstadoPedido.ENTREGADO) {
             pedido.setFechaEntrega(LocalDateTime.now());
         }
-        
+
         Pedido pedidoActualizado = pedidoRepository.save(pedido);
         return PedidoResponse.fromEntity(pedidoActualizado);
     }
