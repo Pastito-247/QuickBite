@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { ShoppingCart, ChefHat, Users, LogOut, ChevronDown, User } from 'lucide-react';
+import { ShoppingCart, ChefHat, Users, LogOut, ChevronDown, User, MapPin, Search } from 'lucide-react';
 import QuickBiteLogo from './QuickBiteLogo';
 import NotificationBadge from './NotificationBadge';
 import { toast } from 'react-toastify';
@@ -9,6 +9,25 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const userRole = localStorage.getItem('userRole');
+  const [address, setAddress] = useState(localStorage.getItem('deliveryAddress') || '');
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setAddress(localStorage.getItem('deliveryAddress') || '');
+    };
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(() => {
+      const currentAddress = localStorage.getItem('deliveryAddress') || '';
+      if (currentAddress !== address) {
+        setAddress(currentAddress);
+      }
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [address]);
 
   if (location.pathname === '/admin' || location.pathname === '/kitchen') {
     return null;
@@ -48,82 +67,130 @@ const Navbar = () => {
     <nav className="bg-white text-gray-800 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <Link to="/" className="flex-shrink-0 flex items-center group">
+          <div className="flex items-center space-x-3 flex-shrink-0">
+            <Link to="/" className="flex items-center group">
               <QuickBiteLogo className="transform group-hover:scale-105 transition-transform" />
-              <span className="ml-2 text-xl font-bold text-gray-900 group-hover:text-primary transition-colors">QuickBite</span>
+              <span className="ml-1.5 text-xl font-black text-secondary-900 group-hover:text-primary transition-colors">QuickBite</span>
             </Link>
+            {address && (
+              <div 
+                onClick={() => navigate('/')} 
+                className="hidden lg:flex items-center space-x-1 text-xs text-gray-500 hover:text-primary cursor-pointer transition-colors bg-gray-50 hover:bg-gray-100 px-3 py-1.5 rounded-full border border-gray-200"
+                title={`Dirección de envío: ${address}`}
+              >
+                <MapPin className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                <span className="truncate max-w-[120px]">Enviar a: <span className="font-bold text-gray-700">{address}</span></span>
+              </div>
+            )}
           </div>
 
-          <div className="hidden md:flex items-center space-x-4">
-            {getNavLinks().map((link) => {
-              const handleProtectedClick = (e) => {
-                if (link.requiresAuth && !userRole) {
-                  e.preventDefault();
-                  toast.info('Debes iniciar sesión para acceder a esta sección');
-                  navigate('/login');
-                }
-              };
+          {/* Buscador Central (Estilo PedidosYa, oculto en Home) */}
+          {location.pathname !== '/' ? (
+            <div className="hidden md:flex flex-grow max-w-md mx-6 items-center">
+              <div className="relative w-full">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Buscar locales o comidas..."
+                  className="pl-9 pr-4 py-2 w-full rounded-full border border-gray-200 focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent text-xs font-semibold text-gray-700 shadow-sm bg-gray-50/50 hover:bg-white focus:bg-white transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      navigate(`/restaurants?search=${encodeURIComponent(e.target.value)}`);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex-grow"></div>
+          )}
 
-              return link.dropdown ? (
-                <div key={link.label} className="relative group">
+          {/* Menú de Navegación y Acciones del Usuario */}
+          <div className="flex items-center space-x-3">
+            <div className="hidden md:flex items-center space-x-2 mr-2">
+              {getNavLinks().map((link) => {
+                const handleProtectedClick = (e) => {
+                  if (link.requiresAuth && !userRole) {
+                    e.preventDefault();
+                    toast.info('Debes iniciar sesión para acceder a esta sección');
+                    navigate('/login');
+                  }
+                };
+
+                return link.dropdown ? (
+                  <div key={link.label} className="relative group">
+                    <Link
+                      to={link.path}
+                      onClick={handleProtectedClick}
+                      className="flex items-center px-3 py-2 rounded-lg text-xs font-bold text-gray-600 hover:text-primary hover:bg-orange-50 transition-colors"
+                    >
+                      {link.icon && <link.icon className="h-3.5 w-3.5 mr-1.5" />}
+                      {link.label}
+                      <ChevronDown className="h-3.5 w-3.5 ml-0.5 text-gray-400" />
+                    </Link>
+                    <div className="absolute left-0 mt-2 w-44 bg-white rounded-xl shadow-xl py-1.5 z-50 hidden group-hover:block border border-gray-100">
+                      {link.dropdown.map(drop => (
+                        <Link
+                          key={drop.label}
+                          to={drop.path}
+                          className="block px-4 py-2 text-xs font-bold text-gray-600 hover:bg-orange-50 hover:text-primary transition-colors"
+                        >
+                          {drop.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
                   <Link
+                    key={link.label}
                     to={link.path}
                     onClick={handleProtectedClick}
-                    className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary hover:bg-orange-50 transition-colors"
+                    className="flex items-center px-3 py-2 rounded-lg text-xs font-bold text-gray-600 hover:text-primary hover:bg-orange-50 transition-colors"
                   >
-                    {link.icon && <link.icon className="h-4 w-4 mr-2" />}
+                    {link.icon && <link.icon className="h-3.5 w-3.5 mr-1.5" />}
                     {link.label}
-                    <ChevronDown className="h-4 w-4 ml-1" />
                   </Link>
-                  <div className="absolute left-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 hidden group-hover:block border border-gray-200">
-                    {link.dropdown.map(drop => (
-                      <Link
-                        key={drop.label}
-                        to={drop.path}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-primary transition-colors"
-                      >
-                        {drop.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
+                );
+              })}
+            </div>
+
+            <div className="flex items-center space-x-3 border-l border-gray-100 pl-3">
+              {(!userRole || userRole === 'CLIENT') && (
+                <button 
+                  onClick={() => {
+                    if (!userRole) {
+                      toast.info('Debes iniciar sesión para usar el carrito');
+                      navigate('/login');
+                    } else {
+                      navigate('/menu');
+                    }
+                  }}
+                  className="p-2 text-gray-500 hover:text-primary transition-colors hover:bg-gray-50 rounded-full" 
+                  title="Ver Carrito"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                </button>
+              )}
+              {userRole && <NotificationBadge />}
+              {userRole ? (
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center px-3 py-2 rounded-xl text-xs font-bold text-white bg-alert hover:bg-alert-600 transition-colors shadow-sm"
+                >
+                  <LogOut className="h-3.5 w-3.5 mr-1.5" />
+                  Salir
+                </button>
               ) : (
                 <Link
-                  key={link.label}
-                  to={link.path}
-                  onClick={handleProtectedClick}
-                  className="flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:text-primary hover:bg-orange-50 transition-colors"
+                  to="/login"
+                  className="flex items-center px-4 py-2 rounded-xl text-xs font-bold text-white bg-primary hover:bg-primary-600 transition-colors shadow-md shadow-orange-100"
                 >
-                  {link.icon && <link.icon className="h-4 w-4 mr-2" />}
-                  {link.label}
+                  Iniciar Sesión
                 </Link>
-              );
-            })}
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-500 font-medium hidden sm:block">
-              {userRole ? `Rol: ${userRole === 'CLIENT' ? 'Cliente' : 
-                    userRole === 'KITCHEN' ? 'Cocina' : 'Administrador'}` : ''}
-            </span>
-            {userRole && <NotificationBadge />}
-            {userRole ? (
-              <button
-                onClick={handleLogout}
-                className="flex items-center px-3 py-2 rounded-md text-sm font-medium bg-alert hover:bg-alert-600 transition-colors"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Cerrar Sesión
-              </button>
-            ) : (
-              <Link
-                to="/login"
-                className="flex items-center px-4 py-2 rounded-md text-sm font-bold text-white bg-primary hover:bg-primary-600 transition-colors shadow-sm"
-              >
-                Iniciar Sesión
-              </Link>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>

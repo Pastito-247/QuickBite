@@ -11,9 +11,9 @@ app.post('/api/auth/login', (req, res) => {
   const { email, password } = req.body;
   
   const mockUsers = [
-    { email: 'admin@quickbite.com', password: 'admin123', role: 'admin', token: 'admin-token' },
-    { email: 'kitchen@quickbite.com', password: 'kitchen123', role: 'kitchen', token: 'kitchen-token' },
-    { email: 'customer@quickbite.com', password: 'customer123', role: 'customer', token: 'customer-token' }
+    { email: 'admin@quickbite.com', password: 'admin123', role: 'ADMIN', token: 'admin-token' },
+    { email: 'kitchen@quickbite.com', password: 'kitchen123', role: 'KITCHEN', token: 'kitchen-token' },
+    { email: 'customer@quickbite.com', password: 'customer123', role: 'CLIENT', token: 'customer-token' }
   ];
 
   const user = mockUsers.find(u => 
@@ -39,6 +39,40 @@ app.post('/api/auth/login', (req, res) => {
     });
   }
 });
+
+// Mock authentication endpoint for frontend/Login.js
+app.post('/api/v1/auth/authenticate', (req, res) => {
+  const { username, password } = req.body;
+  const email = username; // Login.js sends the email in the username field
+  
+  const mockUsers = [
+    { email: 'admin@quickbite.com', password: 'admin123', role: 'ADMIN', token: 'admin-token' },
+    { email: 'kitchen@quickbite.com', password: 'kitchen123', role: 'KITCHEN', token: 'kitchen-token' },
+    { email: 'customer@quickbite.com', password: 'customer123', role: 'CLIENT', token: 'customer-token' }
+  ];
+
+  const user = mockUsers.find(u => 
+    u.email === email && 
+    u.password === password
+  );
+
+  if (user) {
+    res.json({
+      success: true,
+      accessToken: user.token,
+      userId: '1',
+      username: email.split('@')[0],
+      email: email,
+      role: user.role
+    });
+  } else {
+    res.status(401).json({
+      success: false,
+      message: 'Credenciales incorrectas'
+    });
+  }
+});
+
 
 // Mock registration endpoint
 app.post('/api/auth/register', (req, res) => {
