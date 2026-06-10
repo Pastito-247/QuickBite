@@ -43,8 +43,11 @@ public class Ingredient {
     @Column(nullable = false)
     private Integer maximumStock;
     
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private Boolean isActive;
+    
+    @Column(name = "restaurant_id")
+    private Long restaurantId;
     
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

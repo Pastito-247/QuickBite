@@ -15,9 +15,10 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class AvailabilityService {
-    
+
     private final MenuService menuService;
     private final InventoryServiceClient inventoryServiceClient;
+    private final MenuItemIngredientService menuItemIngredientService;
     
     /**
      * Verifica la disponibilidad de ingredientes y desactiva platos automáticamente
@@ -97,16 +98,10 @@ public class AvailabilityService {
     }
     
     /**
-     * Método simulado para obtener IDs de ingredientes de un plato
-     * En una implementación real, esto consultaría una tabla de ingredientes_por_plato
+     * Obtiene IDs de ingredientes de un plato desde la tabla real
      */
     private List<Long> getIngredientIdsForMenuItem(Long menuItemId) {
-        // Simulación: cada plato usa ingredientes con IDs basados en su propio ID
-        return List.of(
-            menuItemId % 10 + 1,  // Ingrediente principal
-            (menuItemId + 1) % 10 + 1,  // Ingrediente secundario
-            (menuItemId + 2) % 10 + 1   // Ingrediente terciario
-        );
+        return menuItemIngredientService.getIngredientIdsForMenuItem(menuItemId);
     }
     
     /**

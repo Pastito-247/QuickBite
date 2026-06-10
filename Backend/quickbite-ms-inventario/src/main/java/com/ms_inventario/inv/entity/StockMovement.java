@@ -41,6 +41,9 @@ public class StockMovement {
     @Column(length = 100)
     private String orderId;
     
+    @Column(name = "restaurant_id")
+    private Long restaurantId;
+    
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;

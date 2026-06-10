@@ -43,6 +43,9 @@ public class Pedido {
     @Column(name = "direccion_entrega", nullable = false)
     private String direccionEntrega;
     
+    @Column(name = "restaurant_id")
+    private Long restaurantId;
+    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private EstadoPedido estado;

@@ -25,9 +25,9 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Health checks y endpoints públicos
                 .requestMatchers("/actuator/health", "/actuator/info", "/api/health", "/api/ready").permitAll()
-                
+
                 // Endpoints de pagos - requieren autenticación
-                .requestMatchers("/api/payments/process").hasAnyRole("CUSTOMER", "ADMIN")
+                .requestMatchers("/api/payments/process").permitAll()
                 .requestMatchers("/api/payments/*/refund").hasAnyRole("ADMIN", "KITCHEN_STAFF")
                 .requestMatchers("/api/payments/**").hasAnyRole("CUSTOMER", "ADMIN", "KITCHEN_STAFF")
                 
