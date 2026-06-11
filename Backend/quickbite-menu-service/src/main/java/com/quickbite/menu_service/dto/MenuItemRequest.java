@@ -19,4 +19,8 @@ public class MenuItemRequest {
 
     @NotBlank(message = "La categoria es obligatoria")
     private String category;
+
+    private String imageUrl;
+
+    private Long restaurantId;
 }

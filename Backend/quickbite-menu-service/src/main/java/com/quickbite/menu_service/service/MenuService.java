@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class MenuService {
 
 private final MenuRepository menuRepository;
+private final MenuItemIngredientService menuItemIngredientService;
 
     // Obtener menú y transformarlo a DTO
     public List<MenuItemResponse> getAvailableMenu() {
@@ -41,6 +42,8 @@ private final MenuRepository menuRepository;
         item.setPrice(request.getPrice());
         item.setCategory(request.getCategory());
         item.setAvailable(true); // Por defecto disponible
+        item.setImageUrl(request.getImageUrl());
+        item.setRestaurantId(request.getRestaurantId());
 
         MenuItem savedItem = menuRepository.save(item);
         return mapToResponse(savedItem);
@@ -83,7 +86,7 @@ private final MenuRepository menuRepository;
     public MenuItemResponse updateMenuItem(Long id, UpdateMenuItemRequest request) {
         MenuItem item = menuRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Plato no encontrado con el ID: " + id));
-        
+
         item.setName(request.getName());
         item.setDescription(request.getDescription());
         if (request.getPrice() != null) {
@@ -93,10 +96,16 @@ private final MenuRepository menuRepository;
         if (request.getAvailable() != null) {
             item.setAvailable(request.getAvailable());
         }
-        
+        if (request.getImageUrl() != null) {
+            item.setImageUrl(request.getImageUrl());
+        }
+        if (request.getRestaurantId() != null) {
+            item.setRestaurantId(request.getRestaurantId());
+        }
+
         MenuItem savedItem = menuRepository.save(item);
         log.info("Updated menu item: {}", id);
-        
+
         return mapToResponse(savedItem);
     }
 
@@ -105,7 +114,10 @@ private final MenuRepository menuRepository;
         if (!menuRepository.existsById(id)) {
             throw new ResourceNotFoundException("Plato no encontrado con el ID: " + id);
         }
-        
+
+        // Eliminar ingredientes asociados al menú
+        menuItemIngredientService.deleteIngredientsByMenuItemId(id);
+
         menuRepository.deleteById(id);
         log.info("Deleted menu item: {}", id);
     }
@@ -166,6 +178,21 @@ private final MenuRepository menuRepository;
         return menuRepository.findAll();
     }
 
+    /**
+     * Validar si hay suficiente stock para un menu item
+     */
+    public boolean validateStockForMenuItem(Long menuItemId, Integer quantity) {
+        return menuItemIngredientService.hasSufficientStock(menuItemId, quantity);
+    }
+
+    /**
+     * Consumir ingredientes de un menu item (llamado al crear pedido)
+     */
+    @Transactional
+    public void consumeIngredientsForMenuItem(Long menuItemId, Integer quantity) {
+        menuItemIngredientService.consumeIngredientsForMenuItem(menuItemId, quantity);
+    }
+
     // Método auxiliar para transformar Entity a DTO
     private MenuItemResponse mapToResponse(MenuItem item) {
         return MenuItemResponse.builder()
@@ -175,6 +202,8 @@ private final MenuRepository menuRepository;
                 .price(item.getPrice())
                 .category(item.getCategory())
                 .available(item.isAvailable())
+                .restaurantId(item.getRestaurantId())
+                .imageUrl(item.getImageUrl())
                 .build();
     }
 

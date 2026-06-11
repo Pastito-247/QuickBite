@@ -66,7 +66,7 @@ public class InventoryServiceImpl implements InventoryService {
         
         // Create initial stock movement
         createStockMovement(savedIngredient, MovementType.INITIAL, request.getCurrentStock(), 
-                           0, request.getCurrentStock(), "Initial stock", "SYSTEM");
+                           0.0, request.getCurrentStock(), "Initial stock", "SYSTEM");
         
         log.info("Successfully created ingredient with ID: {}", savedIngredient.getId());
         return savedIngredient;
@@ -107,7 +107,12 @@ public class InventoryServiceImpl implements InventoryService {
     public List<Ingredient> getAllActiveIngredients() {
         return inventoryRepository.findAllActiveIngredients();
     }
-    
+
+    @Override
+    public List<Ingredient> getIngredientsByIds(List<Long> ids) {
+        return inventoryRepository.findAllById(ids);
+    }
+
     @Override
     public void deleteIngredient(Long id) {
         log.info("Deleting ingredient with ID: {}", id);
@@ -145,7 +150,7 @@ public class InventoryServiceImpl implements InventoryService {
                     continue;
                 }
                 
-                Integer previousStock = ingredient.getCurrentStock();
+                Double previousStock = ingredient.getCurrentStock();
                 ingredient.setCurrentStock(ingredient.getCurrentStock() - item.getQuantity());
                 inventoryRepository.save(ingredient);
                 
@@ -156,13 +161,20 @@ public class InventoryServiceImpl implements InventoryService {
                                                            "Order: " + request.getOrderId(), "SYSTEM");
                 movements.add(movement);
                 
-                // Check if stock reached critical level
+                // Check if stock reached critical level.
+                // El envío de la alerta es un efecto secundario: si falla NO debe
+                // abortar ni revertir el descuento de stock ya realizado.
                 if (ingredient.getCurrentStock() <= ingredient.getMinimumStock()) {
-                    sendCriticalStockAlert(ingredient);
+                    try {
+                        sendCriticalStockAlert(ingredient);
+                    } catch (Exception alertError) {
+                        log.error("Failed to send critical stock alert for ingredient {}; stock deduction is kept",
+                                ingredient.getName(), alertError);
+                    }
                 }
                 
                 // Check if ingredient is out of stock
-                if (ingredient.getCurrentStock() == 0) {
+                if (ingredient.getCurrentStock() <= 0) {
                     log.warn("Ingredient {} is now out of stock", ingredient.getName());
                     // Notify menu service that ingredient is out of stock
                     try {
@@ -187,13 +199,13 @@ public class InventoryServiceImpl implements InventoryService {
     }
     
     @Override
-    public void addStock(Long ingredientId, Integer quantity, String reason, String createdBy) {
+    public void addStock(Long ingredientId, Double quantity, String reason, String createdBy) {
         log.info("Adding {} units to ingredient ID: {}", quantity, ingredientId);
         
         Ingredient ingredient = inventoryRepository.findById(ingredientId)
             .orElseThrow(() -> new IngredientNotFoundException("Ingredient not found with ID: " + ingredientId));
         
-        Integer previousStock = ingredient.getCurrentStock();
+        Double previousStock = ingredient.getCurrentStock();
         ingredient.setCurrentStock(ingredient.getCurrentStock() + quantity);
         inventoryRepository.save(ingredient);
         
@@ -239,21 +251,21 @@ public class InventoryServiceImpl implements InventoryService {
     }
     
     @Override
-    public boolean checkIngredientAvailability(Long ingredientId, Integer requiredQuantity) {
+    public boolean checkIngredientAvailability(Long ingredientId, Double requiredQuantity) {
         return inventoryRepository.findById(ingredientId)
             .map(ingredient -> ingredient.getIsActive() && ingredient.getCurrentStock() >= requiredQuantity)
             .orElse(false);
     }
     
     @Override
-    public Map<Long, Boolean> checkMultipleIngredientsAvailability(Map<Long, Integer> ingredientQuantities) {
+    public Map<Long, Boolean> checkMultipleIngredientsAvailability(Map<Long, Double> ingredientQuantities) {
         List<Long> ingredientIds = new ArrayList<>(ingredientQuantities.keySet());
         List<Ingredient> ingredients = inventoryRepository.findAllById(ingredientIds);
         
         Map<Long, Boolean> availability = new HashMap<>();
         
         for (Ingredient ingredient : ingredients) {
-            Integer requiredQuantity = ingredientQuantities.get(ingredient.getId());
+            Double requiredQuantity = ingredientQuantities.get(ingredient.getId());
             availability.put(ingredient.getId(), 
                 ingredient.getIsActive() && ingredient.getCurrentStock() >= requiredQuantity);
         }
@@ -262,7 +274,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
     
     @Override
-    public void adjustStock(Long ingredientId, Integer newStock, String reason, String createdBy) {
+    public void adjustStock(Long ingredientId, Double newStock, String reason, String createdBy) {
         log.info("Adjusting stock to {} units for ingredient ID: {}", newStock, ingredientId);
         
         Ingredient ingredient = inventoryRepository.findById(ingredientId)
@@ -272,8 +284,8 @@ public class InventoryServiceImpl implements InventoryService {
             throw new IllegalArgumentException("New stock cannot be negative");
         }
         
-        Integer previousStock = ingredient.getCurrentStock();
-        Integer quantity = Math.abs(newStock - previousStock);
+        Double previousStock = ingredient.getCurrentStock();
+        Double quantity = Math.abs(newStock - previousStock);
         MovementType movementType = newStock > previousStock ? MovementType.ADJUSTMENT : MovementType.ADJUSTMENT;
         
         ingredient.setCurrentStock(newStock);
@@ -286,7 +298,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
     
     private StockMovement createStockMovement(Ingredient ingredient, MovementType movementType, 
-                                            Integer quantity, Integer previousStock, Integer newStock, 
+                                            Double quantity, Double previousStock, Double newStock, 
                                             String reason, String createdBy) {
         StockMovement movement = new StockMovement();
         movement.setIngredient(ingredient);
@@ -303,18 +315,17 @@ public class InventoryServiceImpl implements InventoryService {
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "sendCriticalStockAlertFallback")
     private void sendCriticalStockAlert(Ingredient ingredient) {
         try {
-            StockAlertDTO alert = new StockAlertDTO();
-            alert.setIngredientId(ingredient.getId());
-            alert.setIngredientName(ingredient.getName());
-            alert.setCurrentStock(ingredient.getCurrentStock());
-            alert.setMinimumStock(ingredient.getMinimumStock());
-            alert.setAlertType(StockAlertDTO.AlertType.CRITICAL_STOCK);
-            alert.setCreatedAt(LocalDateTime.now());
-            
-            // Send alert via notification service with Circuit Breaker protection
-            notificationServiceClient.sendStockAlert(alert);
+            // Usar la firma con @RequestParam que coincide con el endpoint real
+            // del servicio de notificaciones (/api/notificaciones/inventario-critico)
+            notificationServiceClient.sendStockAlert(
+                    String.valueOf(ingredient.getId()),
+                    ingredient.getRestaurantId() != null ? ingredient.getRestaurantId() : 0L,
+                    ingredient.getName(),
+                    ingredient.getCurrentStock(),
+                    ingredient.getMinimumStock()
+            );
             log.info("Critical stock alert sent for ingredient: {}", ingredient.getName());
-            
+
         } catch (Exception e) {
             log.error("Failed to send critical stock alert for ingredient: {}", ingredient.getName(), e);
             throw e;

@@ -3,6 +3,7 @@ package com.quickbite.Autenticacion.service;
 import com.quickbite.Autenticacion.dto.AuthenticationRequest;
 import com.quickbite.Autenticacion.dto.AuthenticationResponse;
 import com.quickbite.Autenticacion.dto.RegisterRequest;
+import com.quickbite.Autenticacion.dto.UpdateProfileRequest;
 import com.quickbite.Autenticacion.entity.User;
 import com.quickbite.Autenticacion.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -162,5 +163,57 @@ public class AuthenticationService {
                 .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
         user.setEnabled(false);
         userRepository.save(user);
+    }
+
+    /**
+     * Actualiza el perfil de un usuario
+     * @param userId ID del usuario a actualizar
+     * @param request Datos a actualizar
+     * @return Usuario actualizado
+     * @throws IllegalArgumentException si el usuario no existe
+     */
+    @Transactional
+    public User updateProfile(Long userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+        if (request.getFirstName() != null) {
+            user.setFirstName(request.getFirstName());
+        }
+        if (request.getLastName() != null) {
+            user.setLastName(request.getLastName());
+        }
+        if (request.getEmail() != null) {
+            // Verificar que el email no esté en uso por otro usuario
+            if (!user.getEmail().equals(request.getEmail()) && 
+                userRepository.existsByEmail(request.getEmail())) {
+                throw new IllegalArgumentException("El correo electrónico ya está en uso");
+            }
+            user.setEmail(request.getEmail());
+        }
+        if (request.getPhoneNumber() != null) {
+            user.setPhoneNumber(request.getPhoneNumber());
+        }
+        if (request.getProfileImage() != null) {
+            user.setProfileImage(request.getProfileImage());
+        }
+        if (request.getAddress() != null) {
+            user.setAddress(request.getAddress());
+        }
+
+        user.setUpdatedAt(java.time.LocalDateTime.now());
+        return userRepository.save(user);
+    }
+
+    /**
+     * Obtener perfil de usuario por ID
+     * @param userId ID del usuario
+     * @return Usuario encontrado
+     * @throws IllegalArgumentException si el usuario no existe
+     */
+    @Transactional(readOnly = true)
+    public User getUserProfile(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
     }
 }

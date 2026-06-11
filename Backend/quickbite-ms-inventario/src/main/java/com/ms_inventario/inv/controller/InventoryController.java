@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/inventory")
+@RequestMapping("/api/inventory")
 @Validated
 @Slf4j
 @Tag(name = "Inventory", description = "Inventory management API for managing ingredients and stock levels")
@@ -68,6 +68,17 @@ public class InventoryController {
             .collect(Collectors.toList());
         return ResponseEntity.ok(responses);
     }
+
+    @PostMapping("/details")
+    @Operation(summary = "Get ingredients by IDs", description = "Retrieve ingredient details by their IDs")
+    public ResponseEntity<List<InventoryResponse>> getIngredientsByIds(@RequestBody List<Long> ids) {
+        log.info("Getting ingredients by IDs: {}", ids);
+        List<Ingredient> ingredients = inventoryService.getIngredientsByIds(ids);
+        List<InventoryResponse> responses = ingredients.stream()
+            .map(InventoryResponse::fromEntity)
+            .collect(Collectors.toList());
+        return ResponseEntity.ok(responses);
+    }
     
     @GetMapping("/paginated")
     @Operation(summary = "Get all active ingredients (paginated)", description = "Retrieve a paginated list of all active ingredients")
@@ -88,7 +99,15 @@ public class InventoryController {
     
     @PostMapping("/check-availability")
     public ResponseEntity<Map<Long, Boolean>> checkIngredientsAvailability(
-            @RequestBody Map<Long, Integer> ingredientQuantities) {
+            @RequestBody Map<Long, Double> ingredientQuantities) {
+        log.info("Checking availability for {} ingredients", ingredientQuantities.size());
+        Map<Long, Boolean> availability = inventoryService.checkMultipleIngredientsAvailability(ingredientQuantities);
+        return ResponseEntity.ok(availability);
+    }
+    
+    @PostMapping("/check")
+    public ResponseEntity<Map<Long, Boolean>> checkIngredients(
+            @RequestBody Map<Long, Double> ingredientQuantities) {
         log.info("Checking availability for {} ingredients", ingredientQuantities.size());
         Map<Long, Boolean> availability = inventoryService.checkMultipleIngredientsAvailability(ingredientQuantities);
         return ResponseEntity.ok(availability);
@@ -162,7 +181,7 @@ public class InventoryController {
     @PostMapping("/{ingredientId}/add-stock")
     public ResponseEntity<Void> addStock(
             @PathVariable Long ingredientId,
-            @RequestParam Integer quantity,
+            @RequestParam Double quantity,
             @RequestParam String reason,
             @RequestParam String createdBy) {
         log.info("Adding {} units to ingredient ID: {}", quantity, ingredientId);
@@ -173,7 +192,7 @@ public class InventoryController {
     @PostMapping("/{ingredientId}/adjust-stock")
     public ResponseEntity<Void> adjustStock(
             @PathVariable Long ingredientId,
-            @RequestParam Integer newStock,
+            @RequestParam Double newStock,
             @RequestParam String reason,
             @RequestParam String createdBy) {
         log.info("Adjusting stock to {} units for ingredient ID: {}", newStock, ingredientId);

@@ -15,9 +15,9 @@ public class StockMovementResponse {
     private Long ingredientId;
     private String ingredientName;
     private MovementType movementType;
-    private Integer quantity;
-    private Integer previousStock;
-    private Integer newStock;
+    private Double quantity;
+    private Double previousStock;
+    private Double newStock;
     private String reason;
     private String orderId;
     private LocalDateTime createdAt;

@@ -30,4 +30,9 @@ public class MenuItem {
 
     @Column(nullable = false)
     private boolean available = true;
+
+    @Column(name = "restaurant_id")
+    private Long restaurantId;
+
+    private String imageUrl;
 }

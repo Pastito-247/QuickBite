@@ -12,21 +12,15 @@ import java.util.Map;
 @FeignClient(name = "order-service", url = "http://localhost:8084")
 public interface OrderClient {
 
-    @GetMapping("/api/orders/{orderId}")
+    @GetMapping("/api/v1/pedidos/{orderId}")
     Map<String, Object> getOrderById(@PathVariable String orderId);
 
-    @PutMapping("/api/orders/{orderId}/status")
+    /**
+     * Actualiza el estado de un pedido. Body: { "estado": "CONFIRMADO" }
+     */
+    @PutMapping("/api/v1/pedidos/{orderId}/estado")
     Map<String, Object> updateOrderStatus(@PathVariable String orderId, @RequestBody Map<String, Object> statusUpdate);
 
-    @GetMapping("/api/orders/{orderId}/customer")
-    Map<String, Object> getOrderCustomer(@PathVariable String orderId);
-
-    @PostMapping("/api/orders/{orderId}/payment-confirmed")
-    Map<String, Object> confirmPayment(@PathVariable String orderId, @RequestBody Map<String, Object> paymentInfo);
-
-    @PostMapping("/api/orders/{orderId}/payment-failed")
-    Map<String, Object> paymentFailed(@PathVariable String orderId, @RequestBody Map<String, Object> errorInfo);
-
-    @GetMapping("/api/orders/customer/{userId}")
+    @GetMapping("/api/v1/pedidos/cliente/{userId}")
     Map<String, Object>[] getOrdersByCustomer(@PathVariable String userId);
 }

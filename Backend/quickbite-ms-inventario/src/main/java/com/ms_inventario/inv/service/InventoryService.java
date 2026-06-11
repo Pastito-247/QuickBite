@@ -19,14 +19,16 @@ public interface InventoryService {
     Optional<Ingredient> getIngredient(Long id);
     
     List<Ingredient> getAllActiveIngredients();
-    
+
+    List<Ingredient> getIngredientsByIds(List<Long> ids);
+
     Page<Ingredient> getAllActiveIngredientsPaginated(Pageable pageable);
     
     void deleteIngredient(Long id);
     
     void deductStock(StockDeductionRequest request);
     
-    void addStock(Long ingredientId, Integer quantity, String reason, String createdBy);
+    void addStock(Long ingredientId, Double quantity, String reason, String createdBy);
     
     List<Ingredient> getCriticalStockIngredients();
     
@@ -40,9 +42,9 @@ public interface InventoryService {
     
     Page<StockMovement> getStockMovementsPaginated(Long ingredientId, Pageable pageable);
     
-    boolean checkIngredientAvailability(Long ingredientId, Integer requiredQuantity);
+    boolean checkIngredientAvailability(Long ingredientId, Double requiredQuantity);
     
-    Map<Long, Boolean> checkMultipleIngredientsAvailability(Map<Long, Integer> ingredientQuantities);
+    Map<Long, Boolean> checkMultipleIngredientsAvailability(Map<Long, Double> ingredientQuantities);
     
-    void adjustStock(Long ingredientId, Integer newStock, String reason, String createdBy);
+    void adjustStock(Long ingredientId, Double newStock, String reason, String createdBy);
 }

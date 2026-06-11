@@ -27,19 +27,22 @@ public class StockMovement {
     private MovementType movementType;
     
     @Column(nullable = false)
-    private Integer quantity;
+    private Double quantity;
     
     @Column(nullable = false)
-    private Integer previousStock;
+    private Double previousStock;
     
     @Column(nullable = false)
-    private Integer newStock;
+    private Double newStock;
     
     @Column(length = 500)
     private String reason;
     
     @Column(length = 100)
     private String orderId;
+    
+    @Column(name = "restaurant_id")
+    private Long restaurantId;
     
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

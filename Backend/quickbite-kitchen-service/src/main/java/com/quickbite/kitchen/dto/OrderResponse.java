@@ -10,6 +10,7 @@ public class OrderResponse {
     private String orderNumber;
     private String customerName;
     private List<String> items;
+    private List<OrderItemResponse> orderItems;
     private OrderStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime startedAt;
@@ -51,6 +52,14 @@ public class OrderResponse {
     
     public void setItems(List<String> items) {
         this.items = items;
+    }
+    
+    public List<OrderItemResponse> getOrderItems() {
+        return orderItems;
+    }
+    
+    public void setOrderItems(List<OrderItemResponse> orderItems) {
+        this.orderItems = orderItems;
     }
     
     public OrderStatus getStatus() {

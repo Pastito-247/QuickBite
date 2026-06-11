@@ -1,5 +1,6 @@
 package com.quickbite.pedidos.controller;
 
+import com.quickbite.pedidos.dto.DashboardStatsResponse;
 import com.quickbite.pedidos.dto.PedidoRequest;
 import com.quickbite.pedidos.dto.PedidoResponse;
 import com.quickbite.pedidos.entity.Pedido;
@@ -57,9 +58,37 @@ public class PedidoController {
     @GetMapping("/cliente/{clienteId}")
     public ResponseEntity<List<PedidoResponse>> obtenerPedidosPorCliente(@PathVariable Long clienteId) {
         log.info("Solicitud para obtener pedidos del cliente: {}", clienteId);
-        
+
         List<PedidoResponse> pedidos = pedidoService.obtenerPedidosPorCliente(clienteId);
-        
+
+        return ResponseEntity.ok(pedidos);
+    }
+
+    @GetMapping("/restaurante/{restaurantId}")
+    public ResponseEntity<List<PedidoResponse>> obtenerPedidosPorRestaurante(@PathVariable Long restaurantId) {
+        log.info("Solicitud para obtener pedidos del restaurante: {}", restaurantId);
+
+        List<PedidoResponse> pedidos = pedidoService.obtenerPedidosPorRestaurante(restaurantId);
+
+        return ResponseEntity.ok(pedidos);
+    }
+
+    @GetMapping("/restaurante/{restaurantId}/paginados")
+    public ResponseEntity<Page<PedidoResponse>> obtenerPedidosPorRestaurantePaginados(
+            @PathVariable Long restaurantId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "fechaCreacion") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        log.info("Solicitud para obtener pedidos paginados del restaurante: {}", restaurantId);
+
+        Sort sort = sortDir.equalsIgnoreCase("desc") ?
+                Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<PedidoResponse> pedidos = pedidoService.obtenerPedidosPorRestaurante(restaurantId, pageable);
+
         return ResponseEntity.ok(pedidos);
     }
     
@@ -96,15 +125,16 @@ public class PedidoController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "fechaCreacion") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir) {
-        
-        log.info("Solicitud para obtener todos los pedidos paginados");
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(defaultValue = "false") boolean activos) {
         
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
                 Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        Page<PedidoResponse> pedidos = pedidoService.obtenerTodosLosPedidos(pageable);
+        Page<PedidoResponse> pedidos = activos
+                ? pedidoService.obtenerPedidosActivos(pageable)
+                : pedidoService.obtenerTodosLosPedidos(pageable);
         
         return ResponseEntity.ok(pedidos);
     }
@@ -148,12 +178,9 @@ public class PedidoController {
     }
     
     @GetMapping("/estadisticas")
-    public ResponseEntity<List<Object[]>> obtenerEstadisticasPedidos() {
-        log.info("Solicitud para obtener estadísticas de pedidos");
-        
-        List<Object[]> estadisticas = pedidoService.obtenerEstadisticasPedidos();
-        
-        return ResponseEntity.ok(estadisticas);
+    public ResponseEntity<DashboardStatsResponse> obtenerEstadisticasDashboard() {
+        log.info("Solicitud para obtener estadísticas del dashboard");
+        return ResponseEntity.ok(pedidoService.obtenerDashboardStats());
     }
     
     @GetMapping("/estados")
