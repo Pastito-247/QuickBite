@@ -18,9 +18,9 @@ public class InventoryResponse {
     private String description;
     private BigDecimal unitCost;
     private UnitType unitType;
-    private Double currentStock;
-    private Double minimumStock;
-    private Double maximumStock;
+    private Integer currentStock;
+    private Integer minimumStock;
+    private Integer maximumStock;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

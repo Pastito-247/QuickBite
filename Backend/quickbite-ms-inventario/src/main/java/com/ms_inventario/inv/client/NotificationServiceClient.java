@@ -19,8 +19,8 @@ public interface NotificationServiceClient {
             @RequestParam("idIngrediente") String idIngrediente,
             @RequestParam("idRestaurante") Long idRestaurante,
             @RequestParam("nombreIngrediente") String nombreIngrediente,
-            @RequestParam("stockActual") Double stockActual,
-            @RequestParam("stockMinimo") Double stockMinimo
+            @RequestParam("stockActual") Integer stockActual,
+            @RequestParam("stockMinimo") Integer stockMinimo
     );
     
     @PostMapping("/alerts/batch")

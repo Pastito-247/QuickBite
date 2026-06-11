@@ -66,7 +66,7 @@ public class InventoryServiceImpl implements InventoryService {
         
         // Create initial stock movement
         createStockMovement(savedIngredient, MovementType.INITIAL, request.getCurrentStock(), 
-                           0.0, request.getCurrentStock(), "Initial stock", "SYSTEM");
+                           0, request.getCurrentStock(), "Initial stock", "SYSTEM");
         
         log.info("Successfully created ingredient with ID: {}", savedIngredient.getId());
         return savedIngredient;
@@ -150,7 +150,7 @@ public class InventoryServiceImpl implements InventoryService {
                     continue;
                 }
                 
-                Double previousStock = ingredient.getCurrentStock();
+                Integer previousStock = ingredient.getCurrentStock();
                 ingredient.setCurrentStock(ingredient.getCurrentStock() - item.getQuantity());
                 inventoryRepository.save(ingredient);
                 
@@ -174,7 +174,7 @@ public class InventoryServiceImpl implements InventoryService {
                 }
                 
                 // Check if ingredient is out of stock
-                if (ingredient.getCurrentStock() <= 0) {
+                if (ingredient.getCurrentStock() == 0) {
                     log.warn("Ingredient {} is now out of stock", ingredient.getName());
                     // Notify menu service that ingredient is out of stock
                     try {
@@ -199,13 +199,13 @@ public class InventoryServiceImpl implements InventoryService {
     }
     
     @Override
-    public void addStock(Long ingredientId, Double quantity, String reason, String createdBy) {
+    public void addStock(Long ingredientId, Integer quantity, String reason, String createdBy) {
         log.info("Adding {} units to ingredient ID: {}", quantity, ingredientId);
         
         Ingredient ingredient = inventoryRepository.findById(ingredientId)
             .orElseThrow(() -> new IngredientNotFoundException("Ingredient not found with ID: " + ingredientId));
         
-        Double previousStock = ingredient.getCurrentStock();
+        Integer previousStock = ingredient.getCurrentStock();
         ingredient.setCurrentStock(ingredient.getCurrentStock() + quantity);
         inventoryRepository.save(ingredient);
         
@@ -251,21 +251,21 @@ public class InventoryServiceImpl implements InventoryService {
     }
     
     @Override
-    public boolean checkIngredientAvailability(Long ingredientId, Double requiredQuantity) {
+    public boolean checkIngredientAvailability(Long ingredientId, Integer requiredQuantity) {
         return inventoryRepository.findById(ingredientId)
             .map(ingredient -> ingredient.getIsActive() && ingredient.getCurrentStock() >= requiredQuantity)
             .orElse(false);
     }
     
     @Override
-    public Map<Long, Boolean> checkMultipleIngredientsAvailability(Map<Long, Double> ingredientQuantities) {
+    public Map<Long, Boolean> checkMultipleIngredientsAvailability(Map<Long, Integer> ingredientQuantities) {
         List<Long> ingredientIds = new ArrayList<>(ingredientQuantities.keySet());
         List<Ingredient> ingredients = inventoryRepository.findAllById(ingredientIds);
         
         Map<Long, Boolean> availability = new HashMap<>();
         
         for (Ingredient ingredient : ingredients) {
-            Double requiredQuantity = ingredientQuantities.get(ingredient.getId());
+            Integer requiredQuantity = ingredientQuantities.get(ingredient.getId());
             availability.put(ingredient.getId(), 
                 ingredient.getIsActive() && ingredient.getCurrentStock() >= requiredQuantity);
         }
@@ -274,7 +274,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
     
     @Override
-    public void adjustStock(Long ingredientId, Double newStock, String reason, String createdBy) {
+    public void adjustStock(Long ingredientId, Integer newStock, String reason, String createdBy) {
         log.info("Adjusting stock to {} units for ingredient ID: {}", newStock, ingredientId);
         
         Ingredient ingredient = inventoryRepository.findById(ingredientId)
@@ -284,8 +284,8 @@ public class InventoryServiceImpl implements InventoryService {
             throw new IllegalArgumentException("New stock cannot be negative");
         }
         
-        Double previousStock = ingredient.getCurrentStock();
-        Double quantity = Math.abs(newStock - previousStock);
+        Integer previousStock = ingredient.getCurrentStock();
+        Integer quantity = Math.abs(newStock - previousStock);
         MovementType movementType = newStock > previousStock ? MovementType.ADJUSTMENT : MovementType.ADJUSTMENT;
         
         ingredient.setCurrentStock(newStock);
@@ -298,7 +298,7 @@ public class InventoryServiceImpl implements InventoryService {
     }
     
     private StockMovement createStockMovement(Ingredient ingredient, MovementType movementType, 
-                                            Double quantity, Double previousStock, Double newStock, 
+                                            Integer quantity, Integer previousStock, Integer newStock, 
                                             String reason, String createdBy) {
         StockMovement movement = new StockMovement();
         movement.setIngredient(ingredient);

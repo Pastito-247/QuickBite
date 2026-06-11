@@ -29,6 +29,7 @@ public class StockDeductionRequest {
         private Long ingredientId;
         
         @NotNull(message = "Quantity is required")
-        private Double quantity;
+        @Min(value = 1, message = "Quantity must be at least 1")
+        private Integer quantity;
     }
 }

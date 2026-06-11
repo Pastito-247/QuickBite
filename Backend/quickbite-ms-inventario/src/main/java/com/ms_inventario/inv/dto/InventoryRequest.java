@@ -29,14 +29,14 @@ public class InventoryRequest {
     private UnitType unitType;
     
     @NotNull(message = "Current stock is required")
-    @DecimalMin(value = "0.0", message = "Current stock cannot be negative")
-    private Double currentStock;
+    @Min(value = 0, message = "Current stock cannot be negative")
+    private Integer currentStock;
     
     @NotNull(message = "Minimum stock is required")
-    @DecimalMin(value = "0.0", message = "Minimum stock cannot be negative")
-    private Double minimumStock;
+    @Min(value = 0, message = "Minimum stock cannot be negative")
+    private Integer minimumStock;
     
     @NotNull(message = "Maximum stock is required")
-    @DecimalMin(value = "0.01", message = "Maximum stock must be greater than 0")
-    private Double maximumStock;
+    @Min(value = 1, message = "Maximum stock must be at least 1")
+    private Integer maximumStock;
 }

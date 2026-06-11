@@ -39,7 +39,7 @@ public interface InventoryRepository extends JpaRepository<Ingredient, Long> {
     
     @Modifying
     @Query("UPDATE Ingredient i SET i.currentStock = i.currentStock - :quantity WHERE i.id = :ingredientId AND i.currentStock >= :quantity")
-    int deductStock(Long ingredientId, Double quantity);
+    int deductStock(Long ingredientId, Integer quantity);
     
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT i FROM Ingredient i WHERE i.id = :ingredientId")

@@ -204,7 +204,7 @@ public class MenuItemIngredientService {
         List<IngredientConsumption> consumptions = ingredients.stream()
                 .map(mii -> IngredientConsumption.builder()
                         .ingredientId(mii.getIngredientId())
-                        .quantity(mii.getQuantity() * quantity)
+                        .quantity(Double.valueOf(mii.getQuantity() * quantity))
                         .unit(mii.getUnit())
                         .build())
                 .collect(Collectors.toList());

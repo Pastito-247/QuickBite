@@ -813,20 +813,20 @@ const Admin = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock Actual</label>
                   <input 
                     type="number" 
-                    required min="0" step="any"
+                    required min="0"
                     className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
                     value={inventoryFormData.currentStock}
-                    onChange={(e) => setInventoryFormData({...inventoryFormData, currentStock: parseFloat(e.target.value)})}
+                    onChange={(e) => setInventoryFormData({...inventoryFormData, currentStock: parseInt(e.target.value)})}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock Mínimo</label>
                   <input 
                     type="number" 
-                    required min="0" step="any"
+                    required min="0"
                     className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
                     value={inventoryFormData.minimumStock}
-                    onChange={(e) => setInventoryFormData({...inventoryFormData, minimumStock: parseFloat(e.target.value)})}
+                    onChange={(e) => setInventoryFormData({...inventoryFormData, minimumStock: parseInt(e.target.value)})}
                   />
                 </div>
               </div>
@@ -1144,10 +1144,10 @@ const Admin = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
                     <input
                       type="number"
-                      required min="0.01" step="any"
+                      required min="1"
                       className="w-full p-2 border border-gray-300 rounded focus:ring-primary-500 focus:border-primary-500"
                       value={ingredientFormData.quantity}
-                      onChange={(e) => setIngredientFormData({...ingredientFormData, quantity: parseFloat(e.target.value)})}
+                      onChange={(e) => setIngredientFormData({...ingredientFormData, quantity: parseInt(e.target.value)})}
                     />
                   </div>
                   <div>

@@ -15,7 +15,7 @@ public class MenuItemIngredientResponse {
     private Long menuItemId;
     private Long ingredientId;
     private String ingredientName;
-    private Double quantity;
+    private Integer quantity;
     private String unit;
     private Boolean isOptional;
 }

@@ -99,15 +99,7 @@ public class InventoryController {
     
     @PostMapping("/check-availability")
     public ResponseEntity<Map<Long, Boolean>> checkIngredientsAvailability(
-            @RequestBody Map<Long, Double> ingredientQuantities) {
-        log.info("Checking availability for {} ingredients", ingredientQuantities.size());
-        Map<Long, Boolean> availability = inventoryService.checkMultipleIngredientsAvailability(ingredientQuantities);
-        return ResponseEntity.ok(availability);
-    }
-    
-    @PostMapping("/check")
-    public ResponseEntity<Map<Long, Boolean>> checkIngredients(
-            @RequestBody Map<Long, Double> ingredientQuantities) {
+            @RequestBody Map<Long, Integer> ingredientQuantities) {
         log.info("Checking availability for {} ingredients", ingredientQuantities.size());
         Map<Long, Boolean> availability = inventoryService.checkMultipleIngredientsAvailability(ingredientQuantities);
         return ResponseEntity.ok(availability);
@@ -189,7 +181,7 @@ public class InventoryController {
     @PostMapping("/{ingredientId}/add-stock")
     public ResponseEntity<Void> addStock(
             @PathVariable Long ingredientId,
-            @RequestParam Double quantity,
+            @RequestParam Integer quantity,
             @RequestParam String reason,
             @RequestParam String createdBy) {
         log.info("Adding {} units to ingredient ID: {}", quantity, ingredientId);
@@ -200,7 +192,7 @@ public class InventoryController {
     @PostMapping("/{ingredientId}/adjust-stock")
     public ResponseEntity<Void> adjustStock(
             @PathVariable Long ingredientId,
-            @RequestParam Double newStock,
+            @RequestParam Integer newStock,
             @RequestParam String reason,
             @RequestParam String createdBy) {
         log.info("Adjusting stock to {} units for ingredient ID: {}", newStock, ingredientId);

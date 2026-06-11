@@ -18,7 +18,7 @@ public class MenuItemIngredientRequest {
 
     @NotNull(message = "La cantidad es requerida")
     @Positive(message = "La cantidad debe ser mayor a 0")
-    private Double quantity;
+    private Integer quantity;
 
     @NotNull(message = "La unidad es requerida")
     private String unit;

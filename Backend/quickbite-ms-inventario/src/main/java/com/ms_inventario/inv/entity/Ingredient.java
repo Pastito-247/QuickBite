@@ -35,13 +35,13 @@ public class Ingredient {
     private UnitType unitType;
     
     @Column(nullable = false)
-    private Double currentStock;
+    private Integer currentStock;
     
     @Column(nullable = false)
-    private Double minimumStock;
+    private Integer minimumStock;
     
     @Column(nullable = false)
-    private Double maximumStock;
+    private Integer maximumStock;
     
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;

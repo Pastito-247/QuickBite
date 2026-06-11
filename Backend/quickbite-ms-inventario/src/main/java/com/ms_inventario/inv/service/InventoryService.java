@@ -28,7 +28,7 @@ public interface InventoryService {
     
     void deductStock(StockDeductionRequest request);
     
-    void addStock(Long ingredientId, Double quantity, String reason, String createdBy);
+    void addStock(Long ingredientId, Integer quantity, String reason, String createdBy);
     
     List<Ingredient> getCriticalStockIngredients();
     
@@ -42,9 +42,9 @@ public interface InventoryService {
     
     Page<StockMovement> getStockMovementsPaginated(Long ingredientId, Pageable pageable);
     
-    boolean checkIngredientAvailability(Long ingredientId, Double requiredQuantity);
+    boolean checkIngredientAvailability(Long ingredientId, Integer requiredQuantity);
     
-    Map<Long, Boolean> checkMultipleIngredientsAvailability(Map<Long, Double> ingredientQuantities);
+    Map<Long, Boolean> checkMultipleIngredientsAvailability(Map<Long, Integer> ingredientQuantities);
     
-    void adjustStock(Long ingredientId, Double newStock, String reason, String createdBy);
+    void adjustStock(Long ingredientId, Integer newStock, String reason, String createdBy);
 }

@@ -27,13 +27,13 @@ public class StockMovement {
     private MovementType movementType;
     
     @Column(nullable = false)
-    private Double quantity;
+    private Integer quantity;
     
     @Column(nullable = false)
-    private Double previousStock;
+    private Integer previousStock;
     
     @Column(nullable = false)
-    private Double newStock;
+    private Integer newStock;
     
     @Column(length = 500)
     private String reason;

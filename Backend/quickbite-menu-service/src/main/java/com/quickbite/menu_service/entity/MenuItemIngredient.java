@@ -30,7 +30,7 @@ public class MenuItemIngredient {
     private Long ingredientId;
 
     @Column(name = "quantity", nullable = false)
-    private Double quantity;
+    private Integer quantity;
 
     @Column(name = "unit", nullable = false)
     private String unit;

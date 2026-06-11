@@ -67,7 +67,7 @@ public class InventoryServiceClient {
                     .map(c -> {
                         Map<String, Object> item = new HashMap<>();
                         item.put("ingredientId", c.getIngredientId());
-                        item.put("quantity", c.getQuantity());
+                        item.put("quantity", c.getQuantity().intValue());
                         return item;
                     })
                     .collect(Collectors.toList());
