@@ -113,6 +113,14 @@ public class InventoryController {
         return ResponseEntity.ok(availability);
     }
     
+    @PostMapping("/check")
+    public ResponseEntity<Map<Long, Boolean>> checkIngredients(
+            @RequestBody Map<Long, Integer> ingredientQuantities) {
+        log.info("Checking availability for {} ingredients", ingredientQuantities.size());
+        Map<Long, Boolean> availability = inventoryService.checkMultipleIngredientsAvailability(ingredientQuantities);
+        return ResponseEntity.ok(availability);
+    }
+    
     @GetMapping("/critical-stock")
     @Operation(summary = "Get critical stock ingredients", description = "Retrieve ingredients with stock levels at or below minimum threshold")
     public ResponseEntity<List<InventoryResponse>> getCriticalStockIngredients() {
