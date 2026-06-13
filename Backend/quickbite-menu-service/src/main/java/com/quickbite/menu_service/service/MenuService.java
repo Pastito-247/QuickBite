@@ -99,6 +99,9 @@ private final MenuItemIngredientService menuItemIngredientService;
         if (request.getImageUrl() != null) {
             item.setImageUrl(request.getImageUrl());
         }
+        if (request.getRestaurantId() != null) {
+            item.setRestaurantId(request.getRestaurantId());
+        }
 
         MenuItem savedItem = menuRepository.save(item);
         log.info("Updated menu item: {}", id);

@@ -16,6 +16,10 @@ public class OrderRequest {
     
     @NotEmpty(message = "La lista de items no puede estar vacía")
     private List<String> items;
+
+    // Detalle opcional de los items (menuItemId y cantidad). Cuando se provee,
+    // permite descontar ingredientes al pasar el pedido a preparación.
+    private List<OrderItemRequest> orderItems;
     
     @NotNull(message = "El tiempo estimado de preparación es requerido")
     @Min(value = 1, message = "El tiempo estimado debe ser mayor a 0")
@@ -55,6 +59,14 @@ public class OrderRequest {
     
     public void setItems(List<String> items) {
         this.items = items;
+    }
+    
+    public List<OrderItemRequest> getOrderItems() {
+        return orderItems;
+    }
+    
+    public void setOrderItems(List<OrderItemRequest> orderItems) {
+        this.orderItems = orderItems;
     }
     
     public Integer getEstimatedPreparationTime() {

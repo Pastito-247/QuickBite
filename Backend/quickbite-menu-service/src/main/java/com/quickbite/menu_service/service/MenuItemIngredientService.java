@@ -286,4 +286,40 @@ public class MenuItemIngredientService {
     private MenuItemIngredientResponse mapToResponse(MenuItemIngredient menuItemIngredient) {
         return mapToResponse(menuItemIngredient, Map.of());
     }
+
+    /**
+     * Marcar como no disponibles todos los menu items que usan un ingrediente dado.
+     * Llamado desde inventario cuando un ingrediente queda sin stock.
+     */
+    @Transactional
+    public void markMenuItemsUnavailableByIngredient(Long ingredientId) {
+        List<MenuItemIngredient> associations = menuItemIngredientRepository.findByIngredientId(ingredientId);
+        for (MenuItemIngredient mii : associations) {
+            MenuItem menuItem = mii.getMenuItem();
+            if (menuItem != null && menuItem.isAvailable()) {
+                menuItem.setAvailable(false);
+                menuRepository.save(menuItem);
+                log.info("Menu item {} marcado como no disponible por ingrediente {} sin stock",
+                        menuItem.getId(), ingredientId);
+            }
+        }
+    }
+
+    /**
+     * Re-evaluar disponibilidad de menu items que usan un ingrediente dado.
+     * Llamado desde inventario cuando un ingrediente vuelve a tener stock.
+     */
+    @Transactional
+    public void markMenuItemsAvailableByIngredient(Long ingredientId) {
+        List<MenuItemIngredient> associations = menuItemIngredientRepository.findByIngredientId(ingredientId);
+        for (MenuItemIngredient mii : associations) {
+            MenuItem menuItem = mii.getMenuItem();
+            if (menuItem != null && !menuItem.isAvailable()) {
+                menuItem.setAvailable(true);
+                menuRepository.save(menuItem);
+                log.info("Menu item {} marcado como disponible por ingrediente {} con stock",
+                        menuItem.getId(), ingredientId);
+            }
+        }
+    }
 }

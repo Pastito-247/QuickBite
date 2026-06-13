@@ -99,28 +99,27 @@ const Menu = () => {
 
   const confirmAddToCart = () => {
     const item = selectedCustomizationItem;
-    // Generate a unique ID for customized items so they stack separately if notes differ
-    const cartItemId = customizationNote ? `${item.id}-${Date.now()}` : item.id;
+    const cartId = customizationNote ? `${item.id}-${Date.now()}` : `${item.id}-default`;
     
-    const existingItem = cart.find(cartItem => cartItem.id === cartItemId);
+    const existingItem = cart.find(cartItem => cartItem.cartItemId === cartId);
     
     if (existingItem) {
       setCart(cart.map(cartItem =>
-        cartItem.id === cartItemId
+        cartItem.cartItemId === cartId
           ? { ...cartItem, quantity: cartItem.quantity + 1 }
           : cartItem
       ));
     } else {
-      setCart([...cart, { ...item, cartItemId: cartItemId, quantity: 1, notesItem: customizationNote }]);
+      setCart([...cart, { ...item, cartItemId: cartId, quantity: 1, notesItem: customizationNote }]);
     }
     toast.success(`${item.name} agregado al carrito`);
     setSelectedCustomizationItem(null);
     setCustomizationNote('');
   };
 
-  const updateQuantity = (itemId, change) => {
+  const updateQuantity = (cartItemId, change) => {
     setCart(cart.map(item => {
-      if (item.id === itemId) {
+      if (item.cartItemId === cartItemId) {
         const newQuantity = item.quantity + change;
         return newQuantity > 0 ? { ...item, quantity: newQuantity } : null;
       }
@@ -360,7 +359,7 @@ const Menu = () => {
               <>
                 <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
                   {cart.map(item => (
-                    <div key={item.cartItemId || item.id} className="flex items-center justify-between py-2 border-b">
+                    <div key={item.cartItemId} className="flex items-center justify-between py-2 border-b">
                       <div className="flex-1">
                         <h4 className="font-medium text-secondary-900">{item.name}</h4>
                         {item.notesItem && (
@@ -372,14 +371,14 @@ const Menu = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => updateQuantity(item.cartItemId || item.id, -1)}
+                          onClick={() => updateQuantity(item.cartItemId, -1)}
                           className="p-1 rounded-md hover:bg-gray-100"
                         >
                           <Minus className="h-4 w-4" />
                         </button>
                         <span className="w-8 text-center">{item.quantity}</span>
                         <button
-                          onClick={() => updateQuantity(item.cartItemId || item.id, 1)}
+                          onClick={() => updateQuantity(item.cartItemId, 1)}
                           className="p-1 rounded-md hover:bg-gray-100"
                         >
                           <Plus className="h-4 w-4" />

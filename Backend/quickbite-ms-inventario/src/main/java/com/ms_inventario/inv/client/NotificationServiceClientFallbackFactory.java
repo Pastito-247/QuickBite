@@ -17,9 +17,10 @@ public class NotificationServiceClientFallbackFactory implements FallbackFactory
         
         return new NotificationServiceClient() {
             @Override
-            public void sendStockAlert(StockAlertDTO alert) {
-                log.warn("Fallback: Could not send stock alert for ingredient: {}. Alert logged locally.", 
-                        alert.getIngredientName());
+            public void sendStockAlert(String idIngrediente, Long idRestaurante,
+                                       String nombreIngrediente, Integer stockActual, Integer stockMinimo) {
+                log.warn("Fallback: Could not send stock alert for ingredient: {}. Alert logged locally.",
+                        nombreIngrediente);
             }
             
             @Override

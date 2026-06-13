@@ -49,4 +49,16 @@ public interface PedidoRepository extends JpaRepository<Pedido, Long> {
     
     @Query("SELECT p FROM Pedido p WHERE p.emailCliente = :email")
     List<Pedido> findByEmailCliente(@Param("email") String email);
+
+    @Query("SELECT p FROM Pedido p WHERE p.estado NOT IN :estados ORDER BY p.fechaCreacion DESC")
+    Page<Pedido> findByEstadoNotIn(@Param("estados") List<Pedido.EstadoPedido> estados, Pageable pageable);
+
+    @Query("SELECT COALESCE(SUM(p.total), 0) FROM Pedido p WHERE p.estado NOT IN ('CANCELADO')")
+    java.math.BigDecimal sumTotalVentas();
+
+    @Query("SELECT COUNT(DISTINCT p.clienteId) FROM Pedido p WHERE p.clienteId IS NOT NULL")
+    long countDistinctClientes();
+
+    @Query("SELECT p.restaurantId, COUNT(p), COALESCE(SUM(p.total), 0) FROM Pedido p WHERE p.estado != 'CANCELADO' GROUP BY p.restaurantId")
+    List<Object[]> statsByRestaurant();
 }

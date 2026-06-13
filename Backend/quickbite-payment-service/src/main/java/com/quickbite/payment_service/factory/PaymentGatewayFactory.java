@@ -29,6 +29,14 @@ public class PaymentGatewayFactory {
                 return mercadoPagoGateway;
             case "WALLET":
                 return walletGateway;
+            case "EFECTIVO":
+            case "TARJETA_CREDITO":
+            case "TARJETA_DEBITO":
+            case "TRANSFERENCIA":
+            case "PAYPAL":
+                // Métodos de pago tradicionales: se procesan como pago directo
+                // (sin pasarela externa). Usan la misma lógica que Webpay en modo simulación.
+                return webpayGateway;
             default:
                 throw new IllegalArgumentException("Método de pago no soportado: " + paymentMethod);
         }
