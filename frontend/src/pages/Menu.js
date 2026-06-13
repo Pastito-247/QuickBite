@@ -306,27 +306,27 @@ const Menu = () => {
 
   const confirmAddToCart = () => {
     const item = selectedCustomizationItem;
-    const cartItemId = customizationNote ? `${item.id}-${Date.now()}` : item.id;
+    const cartId = customizationNote ? `${item.id}-${Date.now()}` : `${item.id}-default`;
     
-    const existingItem = cart.find(cartItem => cartItem.id === cartItemId);
+    const existingItem = cart.find(cartItem => cartItem.cartItemId === cartId);
     
     if (existingItem) {
       setCart(cart.map(cartItem =>
-        cartItem.id === cartItemId
+        cartItem.cartItemId === cartId
           ? { ...cartItem, quantity: cartItem.quantity + 1 }
           : cartItem
       ));
     } else {
-      setCart([...cart, { ...item, cartItemId: cartItemId, quantity: 1, notesItem: customizationNote }]);
+      setCart([...cart, { ...item, cartItemId: cartId, quantity: 1, notesItem: customizationNote }]);
     }
     toast.success(`${item.name} agregado al carrito`);
     setSelectedCustomizationItem(null);
     setCustomizationNote('');
   };
 
-  const updateQuantity = (itemId, change) => {
+  const updateQuantity = (cartItemId, change) => {
     setCart(cart.map(item => {
-      if (item.id === itemId) {
+      if (item.cartItemId === cartItemId) {
         const newQuantity = item.quantity + change;
         return newQuantity > 0 ? { ...item, quantity: newQuantity } : null;
       }

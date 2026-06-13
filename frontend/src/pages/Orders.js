@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Clock, CheckCircle, Truck, Package, Eye, RefreshCw, XCircle, Trash2 } from 'lucide-react';
+import { Clock, CheckCircle, Truck, Package, Eye, RefreshCw, XCircle, Trash2, ShoppingBag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [activeTab, setActiveTab] = useState('active'); // 'active' | 'history'
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadOrders();
@@ -50,9 +52,22 @@ const Orders = () => {
       id: it.id,
       name: it.nombreProducto,
       quantity: it.cantidad,
-      price: Number(it.precioUnitario) || 0
+      price: Number(it.precioUnitario) || 0,
+      notes: it.notasItem || ''
     }))
   });
+
+  const groupItems = (items) => {
+    const groups = {};
+    items.forEach(item => {
+      if (!groups[item.name]) {
+        groups[item.name] = { name: item.name, price: item.price, totalQty: 0, variants: [] };
+      }
+      groups[item.name].totalQty += item.quantity;
+      groups[item.name].variants.push({ quantity: item.quantity, notes: item.notes });
+    });
+    return Object.values(groups);
+  };
 
   const loadOrders = async () => {
     try {
@@ -79,15 +94,47 @@ const Orders = () => {
     }
   };
 
-  const cancelOrder = (orderId) => {
-    if (window.confirm('¿Estás seguro de que quieres cancelar este pedido?')) {
-      const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'cancelled' } : order
-      );
-      setOrders(updatedOrders);
-      localStorage.setItem('mockClientOrders', JSON.stringify(updatedOrders));
+  const cancelOrder = async (orderId) => {
+    if (!window.confirm('¿Estás seguro de que quieres cancelar este pedido?')) return;
+
+    const order = orders.find(o => o.id === orderId);
+    if (!order || !order.backendId) {
+      toast.error('Orden no encontrada');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+      // Llamar al backend para cancelar el pedido de verdad
+      let response = await fetch(`http://localhost:8080/api/orders/${order.backendId}/cancelar`, {
+        method: 'DELETE',
+        headers
+      });
+
+      // Fallback: si DELETE /cancelar falla, intentar con PUT /estado
+      if (!response.ok) {
+        response = await fetch(`http://localhost:8080/api/orders/${order.backendId}/estado`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', ...headers },
+          body: JSON.stringify({ estado: 'CANCELADO' })
+        });
+      }
+
+      if (!response.ok) {
+        toast.error('Error al cancelar el pedido');
+        return;
+      }
+
+      // Actualizar estado local
+      setOrders(prev => prev.map(o =>
+        o.id === orderId ? { ...o, status: 'cancelled' } : o
+      ));
       toast.success('Pedido cancelado exitosamente');
       if (selectedOrder && selectedOrder.id === orderId) setSelectedOrder(null);
+    } catch (error) {
+      toast.error('Error al cancelar el pedido');
     }
   };
 
@@ -187,6 +234,13 @@ const Orders = () => {
         <h1 className="text-3xl font-bold text-secondary-900">Mis Pedidos</h1>
         <div className="flex items-center space-x-4">
           <button
+            onClick={() => navigate('/menu')}
+            className="flex items-center px-5 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors shadow-sm"
+          >
+            <ShoppingBag className="h-5 w-5 mr-2" />
+            Hacer nuevo pedido
+          </button>
+          <button
             onClick={() => {setActiveTab('active'); setSelectedOrder(null);}}
             className={`px-4 py-2 font-medium transition-colors ${activeTab === 'active' ? 'text-primary border-b-2 border-primary' : 'text-gray-500'}`}
           >
@@ -246,7 +300,10 @@ const Orders = () => {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm text-gray-600">
-                      {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
+                      {groupItems(order.items).length} {groupItems(order.items).length === 1 ? 'producto' : 'productos'}
+                      {order.items.reduce((s, i) => s + i.quantity, 0) > groupItems(order.items).length &&
+                        <span className="text-gray-400 ml-1">({order.items.reduce((s, i) => s + i.quantity, 0)} unidades)</span>
+                      }
                     </p>
                     <p className="text-lg font-semibold text-secondary-900">
                       ${order.total.toLocaleString('es-CL')}
@@ -314,15 +371,28 @@ const Orders = () => {
                 </div>
 
                 <div className="space-y-3 mb-4">
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={index} className="flex justify-between py-2 border-b">
-                      <div>
-                        <p className="font-medium text-secondary-900">{item.name}</p>
-                        <p className="text-sm text-gray-600">Cantidad: {item.quantity}</p>
+                  {groupItems(selectedOrder.items).map((group, index) => (
+                    <div key={index} className="py-2 border-b">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium text-secondary-900">
+                            {group.name}
+                            {group.totalQty > 1 && <span className="text-sm text-gray-500 ml-1">({group.totalQty})</span>}
+                          </p>
+                        </div>
+                        <p className="font-medium text-secondary-900">
+                          ${(group.price * group.totalQty).toLocaleString('es-CL')}
+                        </p>
                       </div>
-                      <p className="font-medium text-secondary-900">
-                        ${(item.price * item.quantity).toLocaleString('es-CL')}
-                      </p>
+                      {group.variants.length > 1 || group.variants.some(v => v.notes) ? (
+                        <div className="mt-1 ml-4 space-y-0.5">
+                          {group.variants.map((v, vi) => (
+                            <p key={vi} className="text-sm text-gray-600">
+                              {v.quantity}x {v.notes ? v.notes : 'Normal'}
+                            </p>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>

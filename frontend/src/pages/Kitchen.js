@@ -65,7 +65,7 @@ const Kitchen = () => {
 
   const loadOrders = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/orders?page=0&size=100');
+      const response = await fetch('http://localhost:8080/api/orders?page=0&size=100&activos=true');
       if (response.ok) {
         const data = await response.json();
         const rawList = Array.isArray(data) ? data : (data.content || []);
@@ -85,7 +85,7 @@ const Kitchen = () => {
             name: it.nombreProducto,
             notes: it.notasItem || ''
           }))
-        }));
+        })).filter(o => o.status !== 'cancelled' && o.status !== 'delivered');
         setOrders(mapped);
       } else {
         toast.error('Error al cargar las órdenes');
@@ -95,6 +95,18 @@ const Kitchen = () => {
       toast.error('Error al cargar las órdenes');
       setLoading(false);
     }
+  };
+
+  const groupItems = (items) => {
+    const groups = {};
+    items.forEach(item => {
+      if (!groups[item.name]) {
+        groups[item.name] = { name: item.name, totalQty: 0, variants: [] };
+      }
+      groups[item.name].totalQty += item.quantity;
+      groups[item.name].variants.push({ quantity: item.quantity, notes: item.notes || '' });
+    });
+    return Object.values(groups);
   };
 
   const statusToBackend = {
@@ -131,21 +143,28 @@ const Kitchen = () => {
         return;
       }
       // Actualizar localmente para respuesta inmediata
-      setOrders(orders.map(o =>
-        o.id === orderId
-          ? {
-              ...o,
-              status: newStatus,
-              ...(newStatus === 'preparing' && { startedAt: new Date().toISOString() }),
-              ...(newStatus === 'ready' && { completedAt: new Date().toISOString() })
-            }
-          : o
-      ));
+      if (newStatus === 'cancelled' || newStatus === 'delivered') {
+        // Eliminar del KDS inmediatamente
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+      } else {
+        setOrders(prev => prev.map(o =>
+          o.id === orderId
+            ? {
+                ...o,
+                status: newStatus,
+                ...(newStatus === 'preparing' && { startedAt: new Date().toISOString() }),
+                ...(newStatus === 'ready' && { completedAt: new Date().toISOString() })
+              }
+            : o
+        ));
+      }
       toast.success(`Orden ${orderId} actualizada a ${getStatusText(newStatus)}`);
     } catch (error) {
       toast.error('Error al actualizar el estado de la orden');
     }
   };
+
+
 
   
   const getStatusText = (status) => {
@@ -310,10 +329,18 @@ const Kitchen = () => {
                 <div className="mb-3">
                   <p className="text-sm font-medium text-gray-700 mb-1">Cliente: {order.customerName}</p>
                   <div className="space-y-1">
-                    {order.items.map((item, index) => (
+                    {groupItems(order.items).map((group, index) => (
                       <div key={index} className="text-sm">
-                        <span className="font-medium">{item.quantity}x {item.name}</span>
-                        {item.notes && <p className="text-xs text-gray-500 italic">Nota: {item.notes}</p>}
+                        <span className="font-medium">{group.totalQty}x {group.name}</span>
+                        {(group.variants.length > 1 || group.variants.some(v => v.notes)) && (
+                          <div className="ml-4 space-y-0.5">
+                            {group.variants.map((v, vi) => (
+                              <p key={vi} className="text-xs text-gray-500 italic">
+                                {v.quantity}x {v.notes || 'Normal'}
+                              </p>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -360,10 +387,18 @@ const Kitchen = () => {
                 <div className="mb-3">
                   <p className="text-sm font-medium text-gray-700 mb-1">Cliente: {order.customerName}</p>
                   <div className="space-y-1">
-                    {order.items.map((item, index) => (
+                    {groupItems(order.items).map((group, index) => (
                       <div key={index} className="text-sm">
-                        <span className="font-medium">{item.quantity}x {item.name}</span>
-                        {item.notes && <p className="text-xs text-gray-500 italic">Nota: {item.notes}</p>}
+                        <span className="font-medium">{group.totalQty}x {group.name}</span>
+                        {(group.variants.length > 1 || group.variants.some(v => v.notes)) && (
+                          <div className="ml-4 space-y-0.5">
+                            {group.variants.map((v, vi) => (
+                              <p key={vi} className="text-xs text-gray-500 italic">
+                                {v.quantity}x {v.notes || 'Normal'}
+                              </p>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -405,9 +440,18 @@ const Kitchen = () => {
                 <div className="mb-3">
                   <p className="text-sm font-medium text-gray-700 mb-1">Cliente: {order.customerName}</p>
                   <div className="space-y-1">
-                    {order.items.map((item, index) => (
+                    {groupItems(order.items).map((group, index) => (
                       <div key={index} className="text-sm">
-                        <span className="font-medium">{item.quantity}x {item.name}</span>
+                        <span className="font-medium">{group.totalQty}x {group.name}</span>
+                        {(group.variants.length > 1 || group.variants.some(v => v.notes)) && (
+                          <div className="ml-4 space-y-0.5">
+                            {group.variants.map((v, vi) => (
+                              <p key={vi} className="text-xs text-gray-500 italic">
+                                {v.quantity}x {v.notes || 'Normal'}
+                              </p>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

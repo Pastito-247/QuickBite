@@ -81,26 +81,13 @@ public class PaymentService {
 
         // Notificar al servicio de pedidos sobre el pago
         try {
-            Map<String, Object> paymentInfo = Map.of(
-                "paymentId", savedPayment.getId(),
-                "transactionId", savedPayment.getTransactionId(),
-                "trackingId", savedPayment.getTrackingId(),
-                "status", savedPayment.getStatus().toString(),
-                "amount", savedPayment.getAmount(),
-                "paymentMethod", savedPayment.getPaymentMethod()
-            );
-
             if (savedPayment.getStatus() == PaymentStatus.COMPLETED) {
-                orderClient.confirmPayment(request.getOrderId(), paymentInfo);
-            } else if (savedPayment.getStatus() == PaymentStatus.PENDING) {
-                orderClient.updateOrderStatus(request.getOrderId(), Map.of(
-                    "status", "PAYMENT_PENDING",
-                    "paymentId", savedPayment.getId()
-                ));
+                orderClient.updateOrderStatus(request.getOrderId(),
+                        Map.of("estado", "CONFIRMADO"));
+                log.info("Pedido {} confirmado tras pago exitoso", request.getOrderId());
             }
         } catch (Exception e) {
             log.error("Error notifying order service about payment: {}", e.getMessage());
-            // No fallar el pago si la notificación falla
         }
 
         return mapToResponse(savedPayment);
@@ -163,14 +150,19 @@ public class PaymentService {
         return mapToResponse(savedPayment);
     }
 
-    // Fallback method para Circuit Breaker
+    // Fallback: procesar en modo simulación en vez de rechazar el pago
     public PaymentResponse processPaymentFallback(PaymentRequest request, Exception exception) {
-        throw new PaymentProcessingException("Servicio de pasarela de pago no disponible. Intente nuevamente más tarde.");
+        log.warn("Circuit breaker activado para pago de orden {}. Procesando en modo simulación: {}",
+                request.getOrderId(), exception.getMessage());
+
+        PaymentGateway gateway = paymentGatewayFactory.getGateway(request.getPaymentMethod());
+        return gateway.processPayment(request);
     }
 
-    // Fallback method para Circuit Breaker
+    // Fallback: informar error pero no bloquear el flujo
     public PaymentResponse refundPaymentFallback(Long paymentId, Exception exception) {
-        throw new PaymentProcessingException("Servicio de pasarela de pago no disponible. Intente nuevamente más tarde.");
+        log.error("Circuit breaker activado para reembolso del pago {}: {}", paymentId, exception.getMessage());
+        throw new PaymentProcessingException("Servicio de pasarela de pago no disponible para reembolso. Intente nuevamente más tarde.");
     }
 
     private String extractUserIdFromRequest(PaymentRequest request) {

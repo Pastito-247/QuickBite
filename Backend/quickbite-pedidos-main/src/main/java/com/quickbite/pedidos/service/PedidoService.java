@@ -1,5 +1,6 @@
 package com.quickbite.pedidos.service;
 
+import com.quickbite.pedidos.dto.DashboardStatsResponse;
 import com.quickbite.pedidos.dto.ItemPedidoRequest;
 import com.quickbite.pedidos.dto.ItemPedidoResponse;
 import com.quickbite.pedidos.dto.PedidoRequest;
@@ -8,13 +9,16 @@ import com.quickbite.pedidos.entity.ItemPedido;
 import com.quickbite.pedidos.entity.Pedido;
 import com.quickbite.pedidos.exception.PedidoNotFoundException;
 import com.quickbite.pedidos.exception.PedidoValidationException;
+import com.quickbite.pedidos.integration.KitchenServiceClient;
 import com.quickbite.pedidos.integration.MenuServiceClient;
 import com.quickbite.pedidos.repository.ItemPedidoRepository;
 import com.quickbite.pedidos.repository.PedidoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,26 +36,39 @@ public class PedidoService {
     private final PedidoRepository pedidoRepository;
     private final ItemPedidoRepository itemPedidoRepository;
     private final MenuServiceClient menuServiceClient;
+    private final KitchenServiceClient kitchenServiceClient;
     
     public PedidoResponse crearPedido(PedidoRequest pedidoRequest) {
         log.info("Creando nuevo pedido para el cliente: {}", pedidoRequest.getNombreCliente());
 
-        // Validar stock de ingredientes antes de crear el pedido
+        // Validar stock de ingredientes antes de crear el pedido.
+        // No se permite comprar cuando no hay stock suficiente (ni cuando no se puede verificar).
         for (ItemPedidoRequest item : pedidoRequest.getItems()) {
+            String nombreProducto = item.getNombreProducto() != null
+                    ? item.getNombreProducto()
+                    : ("ID " + item.getProductoId());
+
+            boolean hasStock;
             try {
                 Map<String, Object> stockValidation = menuServiceClient.validateStock(
                         item.getProductoId(),
                         item.getCantidad()
                 );
-                Boolean hasStock = (Boolean) stockValidation.get("hasSufficientStock");
-                if (!hasStock) {
-                    throw new PedidoValidationException(
-                            "No hay suficiente stock para el item: " + item.getNombreProducto()
-                    );
-                }
+                hasStock = stockValidation != null
+                        && Boolean.TRUE.equals(stockValidation.get("hasSufficientStock"));
             } catch (Exception e) {
-                log.warn("Error validando stock para item {}: {}", item.getProductoId(), e.getMessage());
-                // Continuar aunque falle la validación (fallback)
+                log.error("No se pudo validar el stock para el producto {}: {}",
+                        item.getProductoId(), e.getMessage());
+                throw new PedidoValidationException(
+                        "No se pudo verificar el stock del producto: " + nombreProducto
+                                + ". Intente nuevamente.");
+            }
+
+            if (!hasStock) {
+                log.warn("Pedido rechazado por falta de stock: {} (cantidad {})",
+                        nombreProducto, item.getCantidad());
+                throw new PedidoValidationException(
+                        "No hay suficiente stock para el producto: " + nombreProducto);
             }
         }
 
@@ -71,19 +88,6 @@ public class PedidoService {
         List<ItemPedido> items = pedidoRequest.getItems().stream()
                 .map(this::convertToItemPedido)
                 .collect(Collectors.toList());
-
-        // Validar stock antes de crear el pedido
-        for (ItemPedido item : items) {
-            System.out.println("DEBUG: Validating stock for product ID: " + item.getProductoId() + ", quantity: " + item.getCantidad());
-            Map<String, Object> stockValidation = menuServiceClient.validateStock(item.getProductoId(), item.getCantidad());
-            System.out.println("DEBUG: Stock validation result: " + stockValidation);
-            boolean hasStock = (Boolean) stockValidation.get("hasSufficientStock");
-            System.out.println("DEBUG: Has sufficient stock: " + hasStock);
-            if (!hasStock) {
-                log.error("No hay suficiente stock para el producto ID: {}", item.getProductoId());
-                throw new RuntimeException("No hay suficiente stock para el producto: " + item.getProductoId());
-            }
-        }
 
         items.forEach(item -> item.setPedido(pedido));
         pedido.setItems(items);
@@ -145,6 +149,17 @@ public class PedidoService {
         Page<Pedido> pedidos = pedidoRepository.findAll(pageable);
 
         log.info("Obteniendo página {} de todos los pedidos", pedidos.getNumber());
+        return pedidos.map(PedidoResponse::fromEntity);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<PedidoResponse> obtenerPedidosActivos(Pageable pageable) {
+        List<Pedido.EstadoPedido> excluidos = List.of(
+                Pedido.EstadoPedido.CANCELADO,
+                Pedido.EstadoPedido.ENTREGADO
+        );
+        Page<Pedido> pedidos = pedidoRepository.findByEstadoNotIn(excluidos, pageable);
+        log.info("Obteniendo página {} de pedidos activos (excluyendo cancelados/entregados)", pedidos.getNumber());
         return pedidos.map(PedidoResponse::fromEntity);
     }
 
@@ -222,15 +237,24 @@ public class PedidoService {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new PedidoNotFoundException("Pedido no encontrado con ID: " + id));
         
-        // Solo se pueden cancelar pedidos que estén en estado PENDIENTE o CONFIRMADO
-        if (pedido.getEstado() != Pedido.EstadoPedido.PENDIENTE && 
-            pedido.getEstado() != Pedido.EstadoPedido.CONFIRMADO) {
-            throw new PedidoValidationException("Solo se pueden cancelar pedidos en estado PENDIENTE o CONFIRMADO");
+        // No se pueden cancelar pedidos ya entregados o ya cancelados
+        if (pedido.getEstado() == Pedido.EstadoPedido.ENTREGADO ||
+            pedido.getEstado() == Pedido.EstadoPedido.CANCELADO) {
+            throw new PedidoValidationException("No se puede cancelar un pedido ya " + pedido.getEstado().name().toLowerCase());
         }
         
         log.info("Cancelando pedido: {}", pedido.getNumeroPedido());
         pedido.setEstado(Pedido.EstadoPedido.CANCELADO);
         pedidoRepository.save(pedido);
+
+        // Notificar a cocina para que retire el pedido del KDS
+        try {
+            kitchenServiceClient.updateOrderStatus(pedido.getNumeroPedido(), "CANCELADO");
+            log.info("Cocina notificada de cancelación del pedido {}", pedido.getNumeroPedido());
+        } catch (Exception e) {
+            log.warn("No se pudo notificar a cocina la cancelación del pedido {}: {}",
+                    pedido.getNumeroPedido(), e.getMessage());
+        }
     }
     
     @Transactional(readOnly = true)
@@ -240,6 +264,62 @@ public class PedidoService {
         
         log.info("Obteniendo estadísticas de pedidos desde: {}", fechaInicio);
         return estadisticas;
+    }
+
+    @Transactional(readOnly = true)
+    public DashboardStatsResponse obtenerDashboardStats() {
+        long totalOrders = pedidoRepository.count();
+        java.math.BigDecimal totalRevenue = pedidoRepository.sumTotalVentas();
+        long activeUsers = pedidoRepository.countDistinctClientes();
+
+        // Últimos 10 pedidos
+        Pageable top10 = PageRequest.of(0, 10, Sort.by("fechaCreacion").descending());
+        List<PedidoResponse> recentOrders = pedidoRepository.findAll(top10)
+                .map(PedidoResponse::fromEntity)
+                .getContent();
+
+        // Stats por restaurante
+        Map<Long, String> restaurantNames = loadRestaurantNames();
+        List<Object[]> rawStats = pedidoRepository.statsByRestaurant();
+        List<DashboardStatsResponse.RestaurantStats> byRestaurant = rawStats.stream()
+                .map(row -> {
+                    Long restId = (Long) row[0];
+                    long count = ((Number) row[1]).longValue();
+                    java.math.BigDecimal revenue = (java.math.BigDecimal) row[2];
+                    String name = restaurantNames.getOrDefault(restId,
+                            restId != null ? "Restaurante #" + restId : "Sin restaurante");
+                    return DashboardStatsResponse.RestaurantStats.builder()
+                            .restaurantId(restId)
+                            .restaurantName(name)
+                            .orders(count)
+                            .revenue(revenue)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return DashboardStatsResponse.builder()
+                .totalOrders(totalOrders)
+                .totalRevenue(totalRevenue)
+                .activeUsers(activeUsers)
+                .lowStockItems(0)
+                .recentOrders(recentOrders)
+                .ordersByRestaurant(byRestaurant)
+                .build();
+    }
+
+    private Map<Long, String> loadRestaurantNames() {
+        try {
+            List<Map<String, Object>> restaurants = menuServiceClient.getAllRestaurants();
+            return restaurants.stream()
+                    .collect(Collectors.toMap(
+                            r -> ((Number) r.get("id")).longValue(),
+                            r -> (String) r.getOrDefault("name", "Desconocido"),
+                            (a, b) -> a
+                    ));
+        } catch (Exception e) {
+            log.warn("No se pudo obtener nombres de restaurantes: {}", e.getMessage());
+            return Map.of();
+        }
     }
     
     private ItemPedido convertToItemPedido(ItemPedidoRequest request) {

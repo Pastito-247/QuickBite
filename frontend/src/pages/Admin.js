@@ -81,10 +81,14 @@ const Admin = () => {
     imageUrl: ''
   });
   const [salesHistory, setSalesHistory] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [ordersByRestaurant, setOrdersByRestaurant] = useState([]);
+  const [allOrders, setAllOrders] = useState([]);
+  const [ordersRestaurantFilter, setOrdersRestaurantFilter] = useState('');
   
   useEffect(() => {
     loadDashboardData();
-    loadInventory(); // Always load inventory so the dashboard has data
+    loadInventory();
     if (activeTab === 'menu') {
       loadMenu();
       loadRestaurants();
@@ -93,8 +97,12 @@ const Admin = () => {
       loadRestaurant();
       loadRestaurants();
     }
-    if (activeTab === 'sales') {
+    if (activeTab === 'sales' || activeTab === 'history') {
       loadSalesHistory();
+    }
+    if (activeTab === 'allOrders' || activeTab === 'revenue') {
+      loadAllOrders();
+      loadRestaurants();
     }
   }, [activeTab, selectedRestaurantFilter]);
 
@@ -103,13 +111,22 @@ const Admin = () => {
       const response = await fetch('http://localhost:8080/api/v1/pedidos/estadisticas');
       if (response.ok) {
         const data = await response.json();
-        setStats(data);
-      } else {
-        toast.error('Error al cargar datos del dashboard');
+        setStats(prev => ({
+          ...prev,
+          totalOrders: data.totalOrders || 0,
+          totalRevenue: data.totalRevenue || 0,
+          activeUsers: data.activeUsers || 0
+        }));
+        if (data.recentOrders) {
+          setRecentOrders(data.recentOrders);
+        }
+        if (data.ordersByRestaurant) {
+          setOrdersByRestaurant(data.ordersByRestaurant);
+        }
       }
       setLoading(false);
     } catch (error) {
-      toast.error('Error al cargar datos del dashboard');
+      console.error('Error loading dashboard:', error);
       setLoading(false);
     }
   };
@@ -511,22 +528,33 @@ const Admin = () => {
   };
 
   // Funciones para gestionar historial de ventas
-  const loadSalesHistory = async () => {
+  const loadAllOrders = async () => {
     try {
-      if (!restaurant.id) {
-        toast.error('No hay restaurante seleccionado');
-        return;
-      }
-      const response = await fetch(`http://localhost:8080/api/v1/pedidos/restaurante/${restaurant.id}`);
+      const response = await fetch('http://localhost:8080/api/orders?page=0&size=200');
       if (response.ok) {
         const data = await response.json();
-        setSalesHistory(data);
-      } else {
-        toast.error('Error al cargar historial de ventas');
+        const list = Array.isArray(data) ? data : (data.content || []);
+        setAllOrders(list);
+      }
+    } catch (error) {
+      console.error('Error loading all orders:', error);
+    }
+  };
+
+  const loadSalesHistory = async () => {
+    try {
+      // Si hay restaurante, buscar por restaurante; si no, buscar todos
+      const url = restaurant.id
+        ? `http://localhost:8080/api/v1/pedidos/restaurante/${restaurant.id}`
+        : 'http://localhost:8080/api/orders?page=0&size=50';
+      const response = await fetch(url);
+      if (response.ok) {
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : (data.content || []);
+        setSalesHistory(list);
       }
     } catch (error) {
       console.error('Error loading sales history:', error);
-      toast.error('Error al cargar historial de ventas');
     }
   };
 
@@ -549,7 +577,7 @@ const Admin = () => {
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+        <div onClick={() => setActiveTab('allOrders')} className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Pedidos Totales</p>
@@ -559,9 +587,20 @@ const Admin = () => {
               <ShoppingCart className="h-6 w-6 text-primary" />
             </div>
           </div>
+          {ordersByRestaurant.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+              {ordersByRestaurant.map((r, i) => (
+                <div key={i} className="flex justify-between text-sm">
+                  <span className="text-gray-500 truncate mr-2">{r.restaurantName}</span>
+                  <span className="font-medium text-gray-700">{r.orders}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-primary mt-2 group-hover:underline">Ver detalle →</p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
+        <div onClick={() => setActiveTab('revenue')} className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500 uppercase tracking-wider">Ingresos</p>
@@ -571,6 +610,17 @@ const Admin = () => {
               <DollarSign className="h-6 w-6 text-green-600" />
             </div>
           </div>
+          {ordersByRestaurant.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+              {ordersByRestaurant.map((r, i) => (
+                <div key={i} className="flex justify-between text-sm">
+                  <span className="text-gray-500 truncate mr-2">{r.restaurantName}</span>
+                  <span className="font-medium text-green-700">{formatCurrency(r.revenue)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs text-green-600 mt-2 group-hover:underline">Ver detalle →</p>
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer group">
@@ -603,17 +653,30 @@ const Admin = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold text-secondary-900 mb-4">Pedidos Recientes</h3>
           <div className="space-y-3">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="flex items-center justify-between py-2 border-b">
-                <div>
-                  <p className="font-medium">ORD-{1000 + i}</p>
-                  <p className="text-sm text-gray-600">Hace {i * 15} minutos</p>
+            {recentOrders.length > 0 ? (
+              recentOrders.slice(0, 5).map(order => (
+                <div key={order.id} className="flex items-center justify-between py-2 border-b">
+                  <div>
+                    <p className="font-medium">{order.numeroPedido}</p>
+                    <p className="text-sm text-gray-600">{order.nombreCliente}</p>
+                    <p className="text-xs text-gray-400">{new Date(order.fechaCreacion).toLocaleString('es-CL')}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      order.estado === 'ENTREGADO' ? 'bg-green-100 text-green-800' :
+                      order.estado === 'CANCELADO' ? 'bg-red-100 text-red-800' :
+                      order.estado === 'EN_PREPARACION' ? 'bg-blue-100 text-blue-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {order.estado}
+                    </span>
+                    <p className="text-sm font-medium text-primary mt-1">{formatCurrency(order.total)}</p>
+                  </div>
                 </div>
-                <span className="px-2 py-1 bg-accent-100 text-accent-800 text-sm rounded-full">
-                  Completado
-                </span>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-gray-500 py-2">No hay pedidos registrados.</p>
+            )}
           </div>
         </div>
 
@@ -1368,12 +1431,199 @@ const Admin = () => {
     </div>
   );
 
+  const getRestaurantName = (restaurantId) => {
+    if (!restaurantId) return 'Sin restaurante';
+    const r = restaurants.find(rest => rest.id === restaurantId);
+    return r ? r.name : `Restaurante #${restaurantId}`;
+  };
+
+  const filteredOrders = ordersRestaurantFilter
+    ? allOrders.filter(o => String(o.restaurantId) === ordersRestaurantFilter)
+    : allOrders;
+
+  const renderAllOrders = () => (
+    <div>
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-4">
+          <button onClick={() => setActiveTab('dashboard')} className="text-gray-500 hover:text-gray-700">← Volver</button>
+          <h2 className="text-2xl font-bold text-secondary-900">Todos los Pedidos</h2>
+          <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">{filteredOrders.length} pedidos</span>
+        </div>
+        <select
+          className="px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+          value={ordersRestaurantFilter}
+          onChange={(e) => setOrdersRestaurantFilter(e.target.value)}
+        >
+          <option value="">Todos los restaurantes</option>
+          {restaurants.map(r => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Summary cards per restaurant */}
+      {ordersByRestaurant.length > 0 && !ordersRestaurantFilter && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {ordersByRestaurant.map((r, i) => (
+            <div key={i} onClick={() => setOrdersRestaurantFilter(String(r.restaurantId || ''))}
+              className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 cursor-pointer hover:shadow-md transition-all">
+              <p className="font-semibold text-gray-800">{r.restaurantName}</p>
+              <div className="flex justify-between mt-2">
+                <span className="text-sm text-gray-500">{r.orders} pedidos</span>
+                <span className="text-sm font-medium text-primary">{formatCurrency(r.revenue)}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Restaurante</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredOrders.length === 0 ? (
+              <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">No hay pedidos</td></tr>
+            ) : (
+              filteredOrders.map(order => (
+                <tr key={order.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 text-sm font-medium text-secondary-900">{order.numeroPedido}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{order.nombreCliente}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{getRestaurantName(order.restaurantId)}</td>
+                  <td className="px-6 py-4 text-sm text-gray-500">{new Date(order.fechaCreacion).toLocaleString('es-CL')}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      order.estado === 'ENTREGADO' ? 'bg-green-100 text-green-800' :
+                      order.estado === 'CANCELADO' ? 'bg-red-100 text-red-800' :
+                      order.estado === 'EN_PREPARACION' ? 'bg-blue-100 text-blue-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }`}>{order.estado}</span>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-primary">{formatCurrency(order.total)}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+
+  const renderRevenue = () => {
+    const nonCancelled = ordersRestaurantFilter
+      ? allOrders.filter(o => String(o.restaurantId) === ordersRestaurantFilter && o.estado !== 'CANCELADO')
+      : allOrders.filter(o => o.estado !== 'CANCELADO');
+    const totalFiltered = nonCancelled.reduce((sum, o) => sum + (Number(o.total) || 0), 0);
+
+    return (
+      <div>
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-4">
+            <button onClick={() => setActiveTab('dashboard')} className="text-gray-500 hover:text-gray-700">← Volver</button>
+            <h2 className="text-2xl font-bold text-secondary-900">Detalle de Ingresos</h2>
+            <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">{formatCurrency(totalFiltered)}</span>
+          </div>
+          <select
+            className="px-4 py-2 border border-gray-300 rounded-md focus:ring-primary focus:border-primary"
+            value={ordersRestaurantFilter}
+            onChange={(e) => setOrdersRestaurantFilter(e.target.value)}
+          >
+            <option value="">Todos los restaurantes</option>
+            {restaurants.map(r => (
+              <option key={r.id} value={r.id}>{r.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Revenue cards per restaurant */}
+        {ordersByRestaurant.length > 0 && !ordersRestaurantFilter && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            {ordersByRestaurant.map((r, i) => (
+              <div key={i} onClick={() => setOrdersRestaurantFilter(String(r.restaurantId || ''))}
+                className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 cursor-pointer hover:shadow-md transition-all">
+                <p className="font-semibold text-gray-800">{r.restaurantName}</p>
+                <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(r.revenue)}</p>
+                <p className="text-sm text-gray-500 mt-1">{r.orders} pedidos</p>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pedido</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Restaurante</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Impuesto</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {nonCancelled.length === 0 ? (
+                <tr><td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">No hay ingresos registrados</td></tr>
+              ) : (
+                nonCancelled.map(order => (
+                  <tr key={order.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 text-sm font-medium text-secondary-900">{order.numeroPedido}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{order.nombreCliente}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{getRestaurantName(order.restaurantId)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-500">{new Date(order.fechaCreacion).toLocaleString('es-CL')}</td>
+                    <td className="px-6 py-4">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        order.estado === 'ENTREGADO' ? 'bg-green-100 text-green-800' :
+                        order.estado === 'EN_PREPARACION' ? 'bg-blue-100 text-blue-800' :
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>{order.estado}</span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{formatCurrency(order.subtotal)}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{formatCurrency(order.impuesto)}</td>
+                    <td className="px-6 py-4 text-sm font-bold text-green-700">{formatCurrency(order.total)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+            {nonCancelled.length > 0 && (
+              <tfoot className="bg-gray-50">
+                <tr>
+                  <td colSpan="5" className="px-6 py-3 text-sm font-bold text-gray-700 text-right">Totales:</td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-700">
+                    {formatCurrency(nonCancelled.reduce((s, o) => s + (Number(o.subtotal) || 0), 0))}
+                  </td>
+                  <td className="px-6 py-3 text-sm font-bold text-gray-700">
+                    {formatCurrency(nonCancelled.reduce((s, o) => s + (Number(o.impuesto) || 0), 0))}
+                  </td>
+                  <td className="px-6 py-3 text-sm font-bold text-green-700">
+                    {formatCurrency(totalFiltered)}
+                  </td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: TrendingUp },
+    { id: 'allOrders', label: 'Pedidos', icon: ShoppingCart },
+    { id: 'revenue', label: 'Ingresos', icon: DollarSign },
     { id: 'inventory', label: 'Inventario', icon: Package },
     { id: 'menu', label: 'Menú', icon: ChefHat },
-    { id: 'restaurant', label: 'Mi Restaurante', icon: Store },
-    { id: 'history', label: 'Historial', icon: History }
+    { id: 'restaurant', label: 'Mi Restaurante', icon: Store }
   ];
 
   if (loading) {
@@ -1437,7 +1687,8 @@ const Admin = () => {
       {activeTab === 'inventory' && renderInventory()}
       {activeTab === 'menu' && renderMenu()}
       {activeTab === 'restaurant' && renderRestaurant()}
-      {activeTab === 'history' && renderSalesHistory()}
+      {activeTab === 'allOrders' && renderAllOrders()}
+      {activeTab === 'revenue' && renderRevenue()}
     </div>
   );
 };
