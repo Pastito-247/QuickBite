@@ -1,6 +1,5 @@
 package com.quickbite.pedidos.controller;
 
-import com.quickbite.pedidos.dto.DashboardStatsResponse;
 import com.quickbite.pedidos.dto.PedidoRequest;
 import com.quickbite.pedidos.dto.PedidoResponse;
 import com.quickbite.pedidos.entity.Pedido;
@@ -125,16 +124,15 @@ public class PedidoController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "fechaCreacion") String sortBy,
-            @RequestParam(defaultValue = "desc") String sortDir,
-            @RequestParam(defaultValue = "false") boolean activos) {
+            @RequestParam(defaultValue = "desc") String sortDir) {
+        
+        log.info("Solicitud para obtener todos los pedidos paginados");
         
         Sort sort = sortDir.equalsIgnoreCase("desc") ? 
                 Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         
-        Page<PedidoResponse> pedidos = activos
-                ? pedidoService.obtenerPedidosActivos(pageable)
-                : pedidoService.obtenerTodosLosPedidos(pageable);
+        Page<PedidoResponse> pedidos = pedidoService.obtenerTodosLosPedidos(pageable);
         
         return ResponseEntity.ok(pedidos);
     }
@@ -178,9 +176,12 @@ public class PedidoController {
     }
     
     @GetMapping("/estadisticas")
-    public ResponseEntity<DashboardStatsResponse> obtenerEstadisticasDashboard() {
-        log.info("Solicitud para obtener estadísticas del dashboard");
-        return ResponseEntity.ok(pedidoService.obtenerDashboardStats());
+    public ResponseEntity<List<Object[]>> obtenerEstadisticasPedidos() {
+        log.info("Solicitud para obtener estadísticas de pedidos");
+        
+        List<Object[]> estadisticas = pedidoService.obtenerEstadisticasPedidos();
+        
+        return ResponseEntity.ok(estadisticas);
     }
     
     @GetMapping("/estados")

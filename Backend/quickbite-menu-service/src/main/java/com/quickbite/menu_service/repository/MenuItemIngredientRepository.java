@@ -28,9 +28,4 @@ public interface MenuItemIngredientRepository extends JpaRepository<MenuItemIngr
      * Eliminar todos los ingredientes de un menu item (usando la entidad)
      */
     void deleteByMenuItem_Id(Long menuItemId);
-
-    /**
-     * Obtener todas las asociaciones para un ingrediente dado
-     */
-    List<MenuItemIngredient> findByIngredientId(Long ingredientId);
 }

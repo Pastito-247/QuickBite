@@ -21,6 +21,4 @@ public class UpdateMenuItemRequest {
     private Boolean available;
 
     private String imageUrl;
-
-    private Long restaurantId;
 }

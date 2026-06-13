@@ -25,10 +25,4 @@ public interface MenuServiceClient {
             @PathVariable("id") Long id,
             @RequestParam("quantity") Integer quantity
     );
-
-    @GetMapping("/api/restaurants/{id}")
-    Map<String, Object> getRestaurantById(@PathVariable("id") Long id);
-
-    @GetMapping("/api/restaurants")
-    java.util.List<Map<String, Object>> getAllRestaurants();
 }

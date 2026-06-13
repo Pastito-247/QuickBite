@@ -22,12 +22,6 @@ public class KitchenOrder {
     @CollectionTable(name = "order_items", joinColumns = @JoinColumn(name = "order_id"))
     @Column(name = "item_description")
     private List<String> items;
-
-    // Detalle estructurado de los items (menuItemId y cantidad) usado para
-    // descontar ingredientes en el servicio de menú cuando el pedido pasa a preparación
-    @ElementCollection
-    @CollectionTable(name = "kitchen_order_details", joinColumns = @JoinColumn(name = "order_id"))
-    private List<OrderItem> orderItems;
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -102,14 +96,6 @@ public class KitchenOrder {
     
     public void setItems(List<String> items) {
         this.items = items;
-    }
-
-    public List<OrderItem> getOrderItems() {
-        return orderItems;
-    }
-
-    public void setOrderItems(List<OrderItem> orderItems) {
-        this.orderItems = orderItems;
     }
     
     public OrderStatus getStatus() {

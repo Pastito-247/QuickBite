@@ -161,16 +161,9 @@ public class InventoryServiceImpl implements InventoryService {
                                                            "Order: " + request.getOrderId(), "SYSTEM");
                 movements.add(movement);
                 
-                // Check if stock reached critical level.
-                // El envío de la alerta es un efecto secundario: si falla NO debe
-                // abortar ni revertir el descuento de stock ya realizado.
+                // Check if stock reached critical level
                 if (ingredient.getCurrentStock() <= ingredient.getMinimumStock()) {
-                    try {
-                        sendCriticalStockAlert(ingredient);
-                    } catch (Exception alertError) {
-                        log.error("Failed to send critical stock alert for ingredient {}; stock deduction is kept",
-                                ingredient.getName(), alertError);
-                    }
+                    sendCriticalStockAlert(ingredient);
                 }
                 
                 // Check if ingredient is out of stock
@@ -315,17 +308,18 @@ public class InventoryServiceImpl implements InventoryService {
     @CircuitBreaker(name = "inventoryService", fallbackMethod = "sendCriticalStockAlertFallback")
     private void sendCriticalStockAlert(Ingredient ingredient) {
         try {
-            // Usar la firma con @RequestParam que coincide con el endpoint real
-            // del servicio de notificaciones (/api/notificaciones/inventario-critico)
-            notificationServiceClient.sendStockAlert(
-                    String.valueOf(ingredient.getId()),
-                    ingredient.getRestaurantId() != null ? ingredient.getRestaurantId() : 0L,
-                    ingredient.getName(),
-                    ingredient.getCurrentStock(),
-                    ingredient.getMinimumStock()
-            );
+            StockAlertDTO alert = new StockAlertDTO();
+            alert.setIngredientId(ingredient.getId());
+            alert.setIngredientName(ingredient.getName());
+            alert.setCurrentStock(ingredient.getCurrentStock());
+            alert.setMinimumStock(ingredient.getMinimumStock());
+            alert.setAlertType(StockAlertDTO.AlertType.CRITICAL_STOCK);
+            alert.setCreatedAt(LocalDateTime.now());
+            
+            // Send alert via notification service with Circuit Breaker protection
+            notificationServiceClient.sendStockAlert(alert);
             log.info("Critical stock alert sent for ingredient: {}", ingredient.getName());
-
+            
         } catch (Exception e) {
             log.error("Failed to send critical stock alert for ingredient: {}", ingredient.getName(), e);
             throw e;

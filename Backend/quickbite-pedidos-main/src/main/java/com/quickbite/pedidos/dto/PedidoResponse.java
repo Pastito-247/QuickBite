@@ -19,7 +19,6 @@ public class PedidoResponse {
     private Long id;
     private String numeroPedido;
     private Long clienteId;
-    private Long restaurantId;
     private String nombreCliente;
     private String emailCliente;
     private String telefonoCliente;
@@ -43,7 +42,6 @@ public class PedidoResponse {
                 .id(pedido.getId())
                 .numeroPedido(pedido.getNumeroPedido())
                 .clienteId(pedido.getClienteId())
-                .restaurantId(pedido.getRestaurantId())
                 .nombreCliente(pedido.getNombreCliente())
                 .emailCliente(pedido.getEmailCliente())
                 .telefonoCliente(pedido.getTelefonoCliente())

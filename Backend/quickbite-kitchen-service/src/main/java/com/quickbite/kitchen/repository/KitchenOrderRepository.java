@@ -21,7 +21,7 @@ public interface KitchenOrderRepository extends JpaRepository<KitchenOrder, Long
     @Query("SELECT o FROM KitchenOrder o WHERE o.status IN :statuses ORDER BY o.createdAt ASC")
     List<KitchenOrder> findByStatusInOrderByCreatedAt(@Param("statuses") List<OrderStatus> statuses);
     
-    @Query("SELECT o FROM KitchenOrder o WHERE o.status NOT IN ('ENTREGADO', 'CANCELADO') ORDER BY o.createdAt ASC")
+    @Query("SELECT o FROM KitchenOrder o WHERE o.status != 'ENTREGADO' ORDER BY o.createdAt ASC")
     List<KitchenOrder> findActiveOrdersOrderByCreatedAt();
     
     @Query("SELECT o FROM KitchenOrder o WHERE o.createdAt BETWEEN :startDate AND :endDate ORDER BY o.createdAt DESC")
