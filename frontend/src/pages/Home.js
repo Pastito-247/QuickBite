@@ -7,14 +7,14 @@ import {
 } from 'lucide-react';
 
 const mockRestaurants = [
-  { id: 1, name: 'Burger Queen', type: 'Hamburguesas', rating: 4.8, time: '15-25 min', deliveryFee: '$1.50', gradient: 'from-orange-500 to-amber-500' },
-  { id: 2, name: 'Pizza Hub', type: 'Pizzas', rating: 4.6, time: '20-35 min', deliveryFee: 'Gratis', gradient: 'from-red-500 to-rose-600' },
-  { id: 3, name: 'Taco Fiesta', type: 'Mexicana', rating: 4.7, time: '10-20 min', deliveryFee: '$1.00', gradient: 'from-yellow-500 to-orange-600' },
-  { id: 4, name: 'Sushi Zen', type: 'Sushi', rating: 4.9, time: '30-45 min', deliveryFee: '$2.50', gradient: 'from-indigo-500 to-cyan-500' },
-  { id: 5, name: 'Green Bowl', type: 'Saludable', rating: 4.5, time: '15-20 min', deliveryFee: '$1.00', gradient: 'from-emerald-500 to-teal-600' },
-  { id: 6, name: 'El Asador', type: 'Carnes', rating: 4.8, time: '35-50 min', deliveryFee: '$3.00', gradient: 'from-amber-600 to-yellow-800' },
-  { id: 7, name: 'Wok Express', type: 'Asiática', rating: 4.4, time: '20-30 min', deliveryFee: 'Gratis', gradient: 'from-purple-500 to-indigo-600' },
-  { id: 8, name: 'La Crêperie', type: 'Postres', rating: 4.7, time: '15-25 min', deliveryFee: '$1.20', gradient: 'from-pink-400 to-rose-500' },
+  { id: 1, name: 'Burger Queen', type: 'Hamburguesas', rating: 4.8, time: '15-25 min', deliveryFee: '$1.50', gradient: 'from-orange-500 to-amber-500', logo: '/icon_burger_queen.png', banner: '/banner_burger_queen.png' },
+  { id: 2, name: 'Pizza Hub', type: 'Pizzas', rating: 4.6, time: '20-35 min', deliveryFee: 'Gratis', gradient: 'from-red-500 to-rose-600', logo: '/icon_pizza_hub.png', banner: '/banner_pizza_hub.png' },
+  { id: 3, name: 'Taco Fiesta', type: 'Mexicana', rating: 4.7, time: '10-20 min', deliveryFee: '$1.00', gradient: 'from-yellow-500 to-orange-600', logo: '/icon_taco_fiesta.png', banner: '/banner_taco_fiesta.png' },
+  { id: 4, name: 'Sushi Zen', type: 'Sushi', rating: 4.9, time: '30-45 min', deliveryFee: '$2.50', gradient: 'from-indigo-500 to-cyan-500', logo: '/icon_sushi_zen.png', banner: '/banner_sushi_zen.png' },
+  { id: 5, name: 'Green Bowl', type: 'Saludable', rating: 4.5, time: '15-20 min', deliveryFee: '$1.00', gradient: 'from-emerald-500 to-teal-600', logo: '/icon_green_bowl.png', banner: '/banner_green_bowl.png' },
+  { id: 6, name: 'El Asador', type: 'Carnes', rating: 4.8, time: '35-50 min', deliveryFee: '$3.00', gradient: 'from-amber-600 to-yellow-800', logo: '/icon_el_asador.png', banner: '/banner_el_asador.png' },
+  { id: 7, name: 'Wok Express', type: 'Asiática', rating: 4.4, time: '20-30 min', deliveryFee: 'Gratis', gradient: 'from-purple-500 to-indigo-600', logo: '/icon_wok_express.png', banner: '/banner_wok_express.png' },
+  { id: 8, name: 'La Crêperie', type: 'Postres', rating: 4.7, time: '15-25 min', deliveryFee: '$1.20', gradient: 'from-pink-400 to-rose-500', logo: '/icon_la_creperie.png', banner: '/banner_la_creperie.png' },
 ];
 
 const categoryList = [
@@ -191,8 +191,11 @@ const Home = () => {
                 onClick={() => handleBrandClick(brand.name)}
                 className="flex flex-col items-center space-y-2 flex-shrink-0 group focus:outline-none"
               >
-                <div className={`h-16 w-16 rounded-full bg-gradient-to-br ${brand.gradient} flex items-center justify-center text-white text-lg font-black shadow-md border-2 border-white group-hover:scale-105 group-hover:shadow-lg transition-all`}>
-                  {brand.name.split(' ').map(n => n[0]).join('')}
+                <div className={`h-16 w-16 rounded-full bg-gradient-to-br ${brand.gradient} flex items-center justify-center shadow-md border-2 border-white group-hover:scale-110 group-hover:shadow-lg transition-all overflow-hidden`}>
+                  {brand.banner
+                    ? <img src={brand.banner} alt={brand.name} className="h-full w-full object-cover" onError={(e) => { e.target.style.display='none'; }} />
+                    : <span className="text-white text-lg font-black">{brand.name.split(' ').map(n => n[0]).join('')}</span>
+                  }
                 </div>
                 <span className="text-xs font-bold text-gray-700 group-hover:text-primary transition-colors">{brand.name}</span>
               </button>
@@ -226,12 +229,15 @@ const Home = () => {
                 onClick={() => navigate(`/restaurant/${r.id}/menu`)}
                 className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full group"
               >
-                <div className={`bg-gradient-to-r ${r.gradient} h-28 relative flex items-center justify-center`}>
-                  <div className="absolute top-3 right-3 bg-white px-2 py-0.5 rounded-full text-xs font-black shadow-sm flex items-center text-gray-800">
+                <div className={`bg-gradient-to-r ${r.gradient} h-36 relative overflow-hidden`}>
+                  {r.banner && (
+                    <img src={r.banner} alt={r.name} className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                  )}
+                  <div className="absolute inset-0 bg-black/10" />
+                  <div className="absolute top-3 right-3 bg-white px-2 py-0.5 rounded-full text-xs font-black shadow-sm flex items-center text-gray-800 z-10">
                     <Star className="h-3.5 w-3.5 text-yellow-500 mr-1 fill-current" />
                     {r.rating}
                   </div>
-                  <span className="text-white text-3xl font-black opacity-20 select-none">QuickBite</span>
                 </div>
                 <div className="p-4 flex-grow flex flex-col justify-between">
                   <div>
@@ -272,12 +278,15 @@ const Home = () => {
                 onClick={() => navigate(`/restaurant/${r.id}/menu`)}
                 className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full group"
               >
-                <div className={`bg-gradient-to-r ${r.gradient} h-28 relative flex items-center justify-center`}>
-                  <div className="absolute top-3 right-3 bg-white px-2 py-0.5 rounded-full text-xs font-black shadow-sm flex items-center text-gray-800">
+                <div className={`bg-gradient-to-r ${r.gradient} h-36 relative overflow-hidden`}>
+                  {r.banner && (
+                    <img src={r.banner} alt={r.name} className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                  )}
+                  <div className="absolute inset-0 bg-black/10" />
+                  <div className="absolute top-3 right-3 bg-white px-2 py-0.5 rounded-full text-xs font-black shadow-sm flex items-center text-gray-800 z-10">
                     <Star className="h-3.5 w-3.5 text-yellow-500 mr-1 fill-current" />
                     {r.rating}
                   </div>
-                  <span className="text-white text-3xl font-black opacity-20 select-none">QuickBite</span>
                 </div>
                 <div className="p-4 flex-grow flex flex-col justify-between">
                   <div>
@@ -318,12 +327,15 @@ const Home = () => {
                 onClick={() => navigate(`/restaurant/${r.id}/menu`)}
                 className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col h-full group"
               >
-                <div className={`bg-gradient-to-r ${r.gradient} h-28 relative flex items-center justify-center`}>
-                  <div className="absolute top-3 right-3 bg-white px-2 py-0.5 rounded-full text-xs font-black shadow-sm flex items-center text-gray-800">
+                <div className={`bg-gradient-to-r ${r.gradient} h-36 relative overflow-hidden`}>
+                  {r.banner && (
+                    <img src={r.banner} alt={r.name} className="absolute inset-0 w-full h-full object-cover" onError={(e) => { e.target.style.display = 'none'; }} />
+                  )}
+                  <div className="absolute inset-0 bg-black/10" />
+                  <div className="absolute top-3 right-3 bg-white px-2 py-0.5 rounded-full text-xs font-black shadow-sm flex items-center text-gray-800 z-10">
                     <Star className="h-3.5 w-3.5 text-yellow-500 mr-1 fill-current" />
                     {r.rating}
                   </div>
-                  <span className="text-white text-3xl font-black opacity-20 select-none">QuickBite</span>
                 </div>
                 <div className="p-4 flex-grow flex flex-col justify-between">
                   <div>

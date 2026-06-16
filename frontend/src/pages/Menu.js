@@ -15,14 +15,14 @@ const mockRestaurantNames = {
 };
 
 const restaurantDetails = {
-  1: { name: 'Burger Queen', type: 'Hamburguesas & Fast Food', rating: 4.8, time: '15-25 min', deliveryFee: '$1.50', gradient: 'from-orange-500 via-amber-500 to-orange-600', logo: '/logo_burger_queen.png' },
-  2: { name: 'Pizza Hub', type: 'Pizzas & Italiana', rating: 4.6, time: '20-35 min', deliveryFee: 'Gratis', gradient: 'from-red-500 via-rose-600 to-red-600', logo: '/logo_pizza_hub.png' },
-  3: { name: 'Taco Fiesta', type: 'Tacos & Antojos Mexicanos', rating: 4.7, time: '10-20 min', deliveryFee: '$1.00', gradient: 'from-yellow-500 via-orange-500 to-red-500', logo: '/logo_taco_fiesta.png' },
-  4: { name: 'Sushi Zen', type: 'Sushi & Gastronomía Japonesa', rating: 4.9, time: '30-45 min', deliveryFee: '$2.50', gradient: 'from-indigo-600 via-blue-500 to-cyan-500', logo: '/logo_sushi_zen.png' },
-  5: { name: 'Green Bowl', type: 'Saludable & Bowls Orgánicos', rating: 4.5, time: '15-20 min', deliveryFee: '$1.00', gradient: 'from-emerald-600 via-teal-500 to-emerald-500', logo: '/logo_green_bowl.png' },
-  6: { name: 'El Asador', type: 'Carnes a la Parrilla', rating: 4.8, time: '35-50 min', deliveryFee: '$3.00', gradient: 'from-amber-600 via-yellow-700 to-amber-800', logo: '/logo_el_asador.png' },
-  7: { name: 'Wok Express', type: 'Comida Asiática & Woks', rating: 4.4, time: '20-30 min', deliveryFee: 'Gratis', gradient: 'from-purple-600 via-indigo-500 to-indigo-600', logo: '/logo_wok_express.png' },
-  8: { name: 'La Crêperie', type: 'Postres & Crêpes Dulces', rating: 4.7, time: '15-25 min', deliveryFee: '$1.20', gradient: 'from-pink-500 via-rose-500 to-pink-600', logo: '/logo_la_creperie.png' },
+  1: { name: 'Burger Queen', type: 'Hamburguesas & Fast Food', rating: 4.8, time: '15-25 min', deliveryFee: '$1.50', gradient: 'from-orange-500 via-amber-500 to-orange-600', logo: '/logo_burger_queen.png', banner: '/banner_burger_queen.png' },
+  2: { name: 'Pizza Hub', type: 'Pizzas & Italiana', rating: 4.6, time: '20-35 min', deliveryFee: 'Gratis', gradient: 'from-red-500 via-rose-600 to-red-600', logo: '/logo_pizza_hub.png', banner: '/banner_pizza_hub.png' },
+  3: { name: 'Taco Fiesta', type: 'Tacos & Antojos Mexicanos', rating: 4.7, time: '10-20 min', deliveryFee: '$1.00', gradient: 'from-yellow-500 via-orange-500 to-red-500', logo: '/logo_taco_fiesta.png', banner: '/banner_taco_fiesta.png' },
+  4: { name: 'Sushi Zen', type: 'Sushi & Gastronomía Japonesa', rating: 4.9, time: '30-45 min', deliveryFee: '$2.50', gradient: 'from-indigo-600 via-blue-500 to-cyan-500', logo: '/logo_sushi_zen.png', banner: '/banner_sushi_zen.png' },
+  5: { name: 'Green Bowl', type: 'Saludable & Bowls Orgánicos', rating: 4.5, time: '15-20 min', deliveryFee: '$1.00', gradient: 'from-emerald-600 via-teal-500 to-emerald-500', logo: '/logo_green_bowl.png', banner: '/banner_green_bowl.png' },
+  6: { name: 'El Asador', type: 'Carnes a la Parrilla', rating: 4.8, time: '35-50 min', deliveryFee: '$3.00', gradient: 'from-amber-600 via-yellow-700 to-amber-800', logo: '/logo_el_asador.png', banner: '/banner_el_asador.png' },
+  7: { name: 'Wok Express', type: 'Comida Asiática & Woks', rating: 4.4, time: '20-30 min', deliveryFee: 'Gratis', gradient: 'from-purple-600 via-indigo-500 to-indigo-600', logo: '/logo_wok_express.png', banner: '/banner_wok_express.png' },
+  8: { name: 'La Crêperie', type: 'Postres & Crêpes Dulces', rating: 4.7, time: '15-25 min', deliveryFee: '$1.20', gradient: 'from-pink-500 via-rose-500 to-pink-600', logo: '/logo_la_creperie.png', banner: '/banner_la_creperie.png' },
 };
 
 
@@ -510,9 +510,19 @@ const Menu = () => {
   return (
     <div className="bg-appbg min-h-screen pb-16 animate-fade-in">
       
-      {/* RESTAURANT HERO COVER BANNER (Estilo PedidosYa exacto) */}
-      <div className={`bg-gradient-to-br ${details.gradient} text-white h-44 relative border-b border-gray-100 shadow-sm`}>
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#FFF_1px,transparent_1px)] [background-size:16px_16px]"></div>
+      {/* RESTAURANT HERO COVER BANNER */}
+      <div className={`bg-gradient-to-br ${details.gradient} text-white h-44 relative border-b border-gray-100 shadow-sm overflow-hidden`}>
+        {/* Imagen de banner del restaurante */}
+        {details.banner && (
+          <img
+            src={details.banner}
+            alt={`Banner ${details.name}`}
+            className="absolute inset-0 w-full h-full object-cover opacity-60"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+        )}
+        {/* Overlay oscuro para legibilidad */}
+        <div className="absolute inset-0 bg-black/30" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full relative z-10 flex items-start pt-6">
           {/* Botón de Retorno */}
           <button 
@@ -524,6 +534,7 @@ const Menu = () => {
           </button>
         </div>
       </div>
+
 
       {/* RESTAURANT PROFILE CARD OVERLAPPING */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 md:-mt-24 relative z-20 mb-8">
