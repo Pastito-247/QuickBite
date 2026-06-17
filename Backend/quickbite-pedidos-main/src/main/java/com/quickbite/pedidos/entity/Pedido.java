@@ -112,8 +112,8 @@ public class Pedido {
                 .map(item -> item.getPrecioUnitario().multiply(BigDecimal.valueOf(item.getCantidad())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
             
-            // Impuesto del 16%
-            impuesto = subtotal.multiply(BigDecimal.valueOf(0.16));
+            // Impuesto del 0% (se asume IVA incluido en el precio unitario para CL)
+            impuesto = BigDecimal.ZERO;
             total = subtotal.add(impuesto).add(costoEnvio);
         }
     }

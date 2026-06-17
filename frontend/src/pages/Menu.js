@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Plus, Minus, ShoppingCart, Clock, DollarSign, Star, Truck, ArrowLeft, UtensilsCrossed, Search, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 const mockRestaurantNames = {
   1: 'Burger Queen',
@@ -182,7 +183,7 @@ const getFoodImageUrl = (itemName, category) => {
 
 const Menu = () => {
   const [menuItems, setMenuItems] = useState([]);
-  const [cart, setCart] = useState([]);
+  const { addToCart } = useCart();
   const [loading, setLoading] = useState(true);
   const [selectedCustomizationItem, setSelectedCustomizationItem] = useState(null);
   const [customizationNote, setCustomizationNote] = useState('');
@@ -305,142 +306,17 @@ const Menu = () => {
   };
 
   const confirmAddToCart = () => {
-    const item = selectedCustomizationItem;
-    const cartId = customizationNote ? `${item.id}-${Date.now()}` : `${item.id}-default`;
-    
-    const existingItem = cart.find(cartItem => cartItem.cartItemId === cartId);
-    
-    if (existingItem) {
-      setCart(cart.map(cartItem =>
-        cartItem.cartItemId === cartId
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      ));
-    } else {
-      setCart([...cart, { ...item, cartItemId: cartId, quantity: 1, notesItem: customizationNote }]);
-    }
-    toast.success(`${item.name} agregado al carrito`);
-    setSelectedCustomizationItem(null);
-    setCustomizationNote('');
-  };
-
-  const updateQuantity = (cartItemId, change) => {
-    setCart(cart.map(item => {
-      if (item.cartItemId === cartItemId) {
-        const newQuantity = item.quantity + change;
-        return newQuantity > 0 ? { ...item, quantity: newQuantity } : null;
-      }
-      return item;
-    }).filter(Boolean));
-  };
-
-  const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
-  const getDeliveryFeeValue = () => {
-    if (details.deliveryFee === 'Gratis') return 0;
-    const match = details.deliveryFee.match(/[\d.]+/);
-    if (match) {
-      const val = parseFloat(match[0]);
-      return val < 10 ? val * 1000 : val;
-    }
-    return 0;
-  };
-
-  const proceedToCheckout = async () => {
-    if (cart.length === 0) {
-      toast.error('El carrito está vacío');
-      return;
-    }
-
-    const userId = localStorage.getItem('userId');
-    const userName = localStorage.getItem('userName') || 'Cliente QuickBite';
-    const userEmail = localStorage.getItem('userEmail') || 'cliente@quickbite.com';
-
-    if (!userId) {
-      toast.error('Debes iniciar sesion para hacer un pedido');
+    const userRole = localStorage.getItem('userRole');
+    if (!userRole) {
+      toast.info('Debes iniciar sesión para agregar productos al carrito');
       navigate('/login');
       return;
     }
-
-    const existingOrders = JSON.parse(localStorage.getItem('mockClientOrders') || '[]');
-    if (existingOrders.length === 0) {
-      const confirmFirstOrder = window.confirm(
-        '¡Es tu primer pedido!\n\nConfirmaremos que enviaremos tu comida a tu dirección principal guardada (Av. Providencia 1234, Depto 502, Santiago). ¿Deseas continuar?'
-      );
-      if (!confirmFirstOrder) return;
-    }
-
-    try {
-      for (const item of cart) {
-        if (item.id < 100) {
-          const response = await fetch(`http://localhost:8083/api/menu/${item.id}/validate-stock?quantity=${item.quantity}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (!data.hasSufficientStock) {
-              toast.error(`No hay suficiente stock para: ${item.name}`);
-              return;
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error validando stock, continuando de todas formas:', error);
-    }
-
-    const payload = {
-      clienteId: Number(userId),
-      nombreCliente: userName,
-      emailCliente: userEmail,
-      telefonoCliente: '+56900000000',
-      direccionEntrega: localStorage.getItem('deliveryAddress') || 'Av. Providencia 1234, Depto 502, Santiago',
-      metodoPago: 'EFECTIVO',
-      costoEnvio: getDeliveryFeeValue(),
-      notasCliente: '',
-      items: cart.map(it => ({
-        productoId: it.id,
-        nombreProducto: it.name,
-        descripcionProducto: it.description || '',
-        cantidad: it.quantity,
-        precioUnitario: Number(it.price),
-        notasItem: it.notesItem || ''
-      }))
-    };
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/v1/pedidos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('Error creando pedido:', errText);
-        toast.error('No se pudo registrar el pedido en el servidor');
-        return;
-      }
-
-      const orderData = await response.json();
-      setCart([]);
-      toast.info('Redirigiendo a pasarela de pago...');
-      
-      navigate('/payment', { 
-        state: { 
-          orderId: orderData.numeroPedido,
-          backendId: orderData.id,
-          amount: orderData.total 
-        } 
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error('Error de conexion al crear el pedido');
-    }
+    const item = selectedCustomizationItem;
+    addToCart(item, customizationNote, { id: parseInt(id) || 1, name: details.name, deliveryFee: details.deliveryFee });
+    toast.success(`${item.name} agregado al carrito`);
+    setSelectedCustomizationItem(null);
+    setCustomizationNote('');
   };
 
   const filteredMenuItems = menuItems.filter(item => {
@@ -728,87 +604,6 @@ const Menu = () => {
                 <p className="text-sm text-gray-500">Prueba ajustando el término de búsqueda en la barra superior.</p>
               </div>
             )}
-          </div>
-
-          {/* Columna Derecha: Tu Pedido (Carrito) */}
-          <div className="lg:col-span-1">
-            <div className="bg-white border border-gray-100 rounded-3xl p-6 sticky top-20 shadow-sm">
-              <h2 className="text-lg font-black text-secondary-900 mb-4 pb-2 border-b border-gray-100 flex items-center">
-                <ShoppingCart className="h-5 w-5 text-primary mr-2" />
-                Tu pedido
-              </h2>
-              
-              {cart.length === 0 ? (
-                <p className="text-gray-400 text-xs font-bold text-center py-10">El carrito está vacío</p>
-              ) : (
-                <>
-                  <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-                    {cart.map(item => (
-                      <div key={item.cartItemId || item.id} className="flex items-center justify-between py-2.5 border-b border-gray-50">
-                        <div className="flex-1 pr-2">
-                          <h4 className="text-sm font-bold text-secondary-900 leading-snug">{item.name}</h4>
-                          {item.notesItem && (
-                            <p className="text-[10px] text-gray-400 italic">Nota: {item.notesItem}</p>
-                          )}
-                          <p className="text-xs text-primary font-bold mt-0.5">
-                            ${item.price.toLocaleString('es-CL')} c/u
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-1.5 flex-shrink-0">
-                          <button
-                            onClick={() => updateQuantity(item.cartItemId || item.id, -1)}
-                            className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-primary transition-colors border border-gray-200"
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="w-6 text-center text-xs font-bold text-secondary-900">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.cartItemId || item.id, 1)}
-                            className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-primary transition-colors border border-gray-200"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="border-t border-gray-100 pt-4 space-y-2.5">
-                    <div className="flex justify-between items-center text-xs font-bold text-gray-500">
-                      <span>Subtotal:</span>
-                      <span className="text-secondary-900 font-extrabold">${getTotalPrice().toLocaleString('es-CL')}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center text-xs font-bold text-gray-500">
-                      <span>Envío:</span>
-                      <span className={getDeliveryFeeValue() === 0 ? 'text-accent font-extrabold' : 'text-secondary-900 font-extrabold'}>
-                        {getDeliveryFeeValue() === 0 ? 'Gratis' : `$${getDeliveryFeeValue().toLocaleString('es-CL')}`}
-                      </span>
-                    </div>
-
-                    {getDeliveryFeeValue() === 0 && (
-                      <div className="bg-emerald-50 text-accent text-[10px] font-extrabold p-2 rounded-lg text-center border border-emerald-100">
-                        🎉 ¡Tu despacho para este local es gratis!
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center pt-2.5 border-t border-gray-100 mb-4">
-                      <span className="text-sm font-black text-secondary-900">Total a pagar:</span>
-                      <span className="text-xl font-black text-primary">
-                        ${(getTotalPrice() + getDeliveryFeeValue()).toLocaleString('es-CL')}
-                      </span>
-                    </div>
-                    <button
-                      onClick={proceedToCheckout}
-                      className="w-full bg-primary hover:bg-primary-600 text-white py-3.5 rounded-xl font-black text-xs transition-all shadow-md shadow-orange-100 flex items-center justify-center hover:scale-[1.01] active:scale-[0.99]"
-                    >
-                      <DollarSign className="h-4 w-4 mr-1.5" />
-                      Proceder al Pago
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
 
         </div>

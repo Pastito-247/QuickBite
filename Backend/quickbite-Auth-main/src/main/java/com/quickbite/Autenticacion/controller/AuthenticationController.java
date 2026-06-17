@@ -160,12 +160,20 @@ public class AuthenticationController {
     })
     public ResponseEntity<User> updateProfile(
             @PathVariable Long id,
-            @Valid @RequestBody UpdateProfileRequest request) {
+            @RequestBody UpdateProfileRequest request) {
         try {
+            System.out.println("UPDATE PROFILE CALLED FOR ID: " + id);
+            System.out.println("PROFILE IMAGE LENGTH: " + (request.getProfileImage() != null ? request.getProfileImage().length() : "null"));
+            
             User user = authenticationService.updateProfile(id, request);
             return ResponseEntity.ok(user);
         } catch (IllegalArgumentException e) {
+            System.out.println("UPDATE FAILED: " + e.getMessage());
             return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            System.out.println("EXCEPTION: " + e.getClass().getName() + " - " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
         }
     }
     

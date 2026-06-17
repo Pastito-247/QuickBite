@@ -44,6 +44,8 @@ const Orders = () => {
     id: p.numeroPedido || `PED-${p.id}`,
     backendId: p.id,
     status: mapEstado(p.estado),
+    subtotal: Number(p.subtotal) || 0,
+    deliveryFee: Number(p.costoEnvio) || 0,
     total: Number(p.total) || 0,
     createdAt: p.fechaCreacion,
     estimatedTime: p.tiempoEstimadoMinutos || 0,
@@ -401,12 +403,14 @@ const Orders = () => {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-600">Subtotal:</span>
                     <span className="font-medium">
-                      ${selectedOrder.total.toLocaleString('es-CL')}
+                      ${selectedOrder.subtotal.toLocaleString('es-CL')}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-600">Delivery:</span>
-                    <span className="font-medium">$0</span>
+                    <span className="font-medium">
+                      {selectedOrder.deliveryFee === 0 ? 'Gratis' : `$${selectedOrder.deliveryFee.toLocaleString('es-CL')}`}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t">
                     <span className="text-lg font-semibold">Total:</span>
