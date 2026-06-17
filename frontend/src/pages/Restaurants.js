@@ -19,14 +19,14 @@ const chileanCommunes = [
 ];
 
 const mockRestaurants = [
-  { id: 1, name: 'Burger Queen', type: 'Hamburguesas', rating: 4.8, time: '15-25 min', deliveryFee: '$1.50', gradient: 'from-orange-500 to-amber-500', logo: '/logo_burger_queen.png' },
-  { id: 2, name: 'Pizza Hub', type: 'Pizzas', rating: 4.6, time: '20-35 min', deliveryFee: 'Gratis', gradient: 'from-red-500 to-rose-600', logo: '/logo_pizza_hub.png' },
-  { id: 3, name: 'Taco Fiesta', type: 'Mexicana', rating: 4.7, time: '10-20 min', deliveryFee: '$1.00', gradient: 'from-yellow-500 to-orange-600', logo: '/logo_taco_fiesta.png' },
-  { id: 4, name: 'Sushi Zen', type: 'Sushi', rating: 4.9, time: '30-45 min', deliveryFee: '$2.50', gradient: 'from-indigo-500 to-cyan-500', logo: '/logo_sushi_zen.png' },
-  { id: 5, name: 'Green Bowl', type: 'Saludable', rating: 4.5, time: '15-20 min', deliveryFee: '$1.00', gradient: 'from-emerald-500 to-teal-600', logo: '/logo_green_bowl.png' },
-  { id: 6, name: 'El Asador', type: 'Carnes', rating: 4.8, time: '35-50 min', deliveryFee: '$3.00', gradient: 'from-amber-600 to-yellow-800', logo: '/logo_el_asador.png' },
-  { id: 7, name: 'Wok Express', type: 'Asiática', rating: 4.4, time: '20-30 min', deliveryFee: 'Gratis', gradient: 'from-purple-500 to-indigo-600', logo: '/logo_wok_express.png' },
-  { id: 8, name: 'La Crêperie', type: 'Postres', rating: 4.7, time: '15-25 min', deliveryFee: '$1.20', gradient: 'from-pink-400 to-rose-500', logo: '/logo_la_creperie.png' },
+  { id: 1, name: 'Burger Queen', type: 'Hamburguesas', rating: 4.8, time: '15-25 min', deliveryFee: '$1.50', gradient: 'from-orange-500 to-amber-500', logo: '/icon_burger_queen.png', banner: '/banner_burger_queen.png' },
+  { id: 2, name: 'Pizza Hub', type: 'Pizzas', rating: 4.6, time: '20-35 min', deliveryFee: 'Gratis', gradient: 'from-red-500 to-rose-600', logo: '/icon_pizza_hub.png', banner: '/banner_pizza_hub.png' },
+  { id: 3, name: 'Taco Fiesta', type: 'Mexicana', rating: 4.7, time: '10-20 min', deliveryFee: '$1.00', gradient: 'from-yellow-500 to-orange-600', logo: '/icon_taco_fiesta.png', banner: '/banner_taco_fiesta.png' },
+  { id: 4, name: 'Sushi Zen', type: 'Sushi', rating: 4.9, time: '30-45 min', deliveryFee: '$2.50', gradient: 'from-indigo-500 to-cyan-500', logo: '/icon_sushi_zen.png', banner: '/banner_sushi_zen.png' },
+  { id: 5, name: 'Green Bowl', type: 'Saludable', rating: 4.5, time: '15-20 min', deliveryFee: '$1.00', gradient: 'from-emerald-500 to-teal-600', logo: '/icon_green_bowl.png', banner: '/banner_green_bowl.png' },
+  { id: 6, name: 'El Asador', type: 'Carnes', rating: 4.8, time: '35-50 min', deliveryFee: '$3.00', gradient: 'from-amber-600 to-yellow-800', logo: '/icon_el_asador.png', banner: '/banner_el_asador.png' },
+  { id: 7, name: 'Wok Express', type: 'Asiática', rating: 4.4, time: '20-30 min', deliveryFee: 'Gratis', gradient: 'from-purple-500 to-indigo-600', logo: '/icon_wok_express.png', banner: '/banner_wok_express.png' },
+  { id: 8, name: 'La Crêperie', type: 'Postres', rating: 4.7, time: '15-25 min', deliveryFee: '$1.20', gradient: 'from-pink-400 to-rose-500', logo: '/icon_la_creperie.png', banner: '/banner_la_creperie.png' },
 ];
 
 const categories = ['Todos', 'Hamburguesas', 'Pizzas', 'Mexicana', 'Sushi', 'Saludable', 'Carnes', 'Asiática', 'Postres'];
@@ -200,10 +200,10 @@ const Restaurants = () => {
                 className="flex flex-col items-center space-y-2 flex-shrink-0 group focus:outline-none"
               >
                 <div className={`h-16 w-16 rounded-full bg-gradient-to-br ${brand.gradient} flex items-center justify-center shadow-sm border-2 border-white group-hover:scale-110 group-hover:shadow-lg transition-all overflow-hidden`}>
-                  {brand.logo ? (
-                    <img src={brand.logo} alt={brand.name} className="h-full w-full object-cover" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
+                  {brand.banner ? (
+                    <img src={brand.banner} alt={brand.name} className="h-full w-full object-cover" onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }} />
                   ) : null}
-                  <span className="text-white text-base font-black" style={{display: brand.logo ? 'none' : 'flex'}}>{brand.name.split(' ').map(n => n[0]).join('')}</span>
+                  <span className="text-white text-base font-black" style={{display: brand.banner ? 'none' : 'flex'}}>{brand.name.split(' ').map(n => n[0]).join('')}</span>
                 </div>
                 <span className="text-xs font-bold text-gray-700 group-hover:text-primary transition-colors">{brand.name}</span>
               </button>
@@ -238,32 +238,31 @@ const Restaurants = () => {
                 className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 group flex flex-col h-full relative"
               >
                 
-                {/* Banner de Tarjeta con gradiente y calificación */}
-                <div className={`bg-gradient-to-br ${restaurant.gradient} h-28 relative flex items-center justify-center w-full`}>
-                  <span className="text-white text-3xl font-black opacity-15 select-none">QuickBite</span>
-                  
+                {/* Banner de Tarjeta — imagen rectangular de portada */}
+                <div className={`bg-gradient-to-br ${restaurant.gradient} h-36 relative w-full overflow-hidden`}>
+                  {restaurant.banner ? (
+                    <img
+                      src={restaurant.banner}
+                      alt={`Banner ${restaurant.name}`}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      onError={(e) => { e.target.style.display = 'none'; }}
+                    />
+                  ) : (
+                    <span className="absolute inset-0 flex items-center justify-center text-white text-3xl font-black opacity-20 select-none">{restaurant.name}</span>
+                  )}
+
+                  {/* Overlay sutil para legibilidad del badge */}
+                  <div className="absolute inset-0 bg-black/10" />
+
                   {/* Calificación Flotante */}
-                  <div className="absolute top-3 right-3 bg-white px-2.5 py-1 rounded-full text-xs font-black shadow-sm flex items-center text-gray-800">
+                  <div className="absolute top-3 right-3 bg-white px-2.5 py-1 rounded-full text-xs font-black shadow-sm flex items-center text-gray-800 z-10">
                     <Star className="h-3.5 w-3.5 text-yellow-500 mr-1 fill-current" />
                     {restaurant.rating}
                   </div>
                 </div>
-
-                {/* LOGO CIRCULAR SUPERPUESTO (Estilo PedidosYa exacto) */}
-                <div className="absolute top-20 left-4 z-10 flex items-center justify-center h-14 w-14 bg-white rounded-full shadow-md border-2 border-white overflow-hidden">
-                  {restaurant.logo ? (
-                    <img
-                      src={restaurant.logo}
-                      alt={restaurant.name}
-                      className="h-full w-full object-cover"
-                      onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='flex'; }}
-                    />
-                  ) : null}
-                  <span className="text-secondary-900 font-extrabold text-sm tracking-tighter" style={{display: restaurant.logo ? 'none' : 'flex'}}>{restaurant.name.split(' ').map(n => n[0]).join('')}</span>
-                </div>
                 
-                {/* Contenido de la tarjeta con padding-top para el logo */}
-                <div className="pt-8 px-5 pb-5 flex-grow flex flex-col justify-between">
+                {/* Contenido de la tarjeta */}
+                <div className="pt-4 px-5 pb-5 flex-grow flex flex-col justify-between">
                   <div>
                     <span className="inline-block bg-orange-50 text-primary text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider mb-2">
                       {restaurant.type}

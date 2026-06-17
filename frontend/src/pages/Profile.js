@@ -60,15 +60,20 @@ const Profile = () => {
       try {
         const userId = localStorage.getItem('userId');
         const token = localStorage.getItem('token');
-        if (!userId || !token) {
-          loadLocalProfile();
+        
+        if (!userId || userId === 'undefined' || userId === 'null' || !token || token === 'undefined' || token === 'null') {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userRole');
+          localStorage.removeItem('userId');
+          navigate('/login');
           return;
         }
 
         const response = await fetch(`http://localhost:8081/api/v1/auth/profile/${userId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
-          }
+          },
+          cache: 'no-store'
         });
         
         if (response.ok) {
@@ -86,6 +91,12 @@ const Profile = () => {
           };
           setUserData(loadedData);
           setFormData(loadedData);
+        } else if (response.status === 401 || response.status === 403) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userRole');
+          localStorage.removeItem('userId');
+          toast.error('Tu sesión ha expirado');
+          navigate('/login');
         } else {
           loadLocalProfile();
         }
@@ -94,7 +105,7 @@ const Profile = () => {
       }
     };
     fetchUserData();
-  }, []);
+  }, [navigate]);
 
   const handleChange = (e) => {
     setFormData({
@@ -167,6 +178,19 @@ const Profile = () => {
         const data = await response.json();
         setUserData({ ...formData, phone: data.phoneNumber || formData.phone });
         setIsEditing(false);
+        
+        // Sincronizar localStorage para que otros componentes (como CartSidebar) usen el nuevo nombre/dirección/imagen
+        localStorage.setItem('userFirstName', formData.firstName);
+        localStorage.setItem('userLastName', formData.lastName);
+        localStorage.setItem('userName', `${formData.firstName} ${formData.lastName}`);
+        localStorage.setItem('userPhone', formData.phone || data.phoneNumber);
+        localStorage.setItem('userAddress', formData.address);
+        localStorage.setItem('deliveryAddress', formData.address);
+        if (formData.profileImage) {
+          localStorage.setItem('userProfileImage', formData.profileImage);
+        }
+        window.dispatchEvent(new Event('storage'));
+        
         toast.success('Datos del perfil actualizados exitosamente');
       } else {
         saveLocalProfile();
@@ -206,10 +230,12 @@ const Profile = () => {
                 </div>
                 
                 {/* Botón flotante para subir foto */}
-                <label className="absolute bottom-0 right-0 bg-primary hover:bg-primary-600 text-white p-2 rounded-full shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95">
-                  <Camera className="h-4 w-4" />
-                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                </label>
+                {isEditing && (
+                  <label className="absolute bottom-0 right-0 bg-primary hover:bg-primary-600 text-white p-2 rounded-full shadow-md cursor-pointer transition-all transform hover:scale-105 active:scale-95">
+                    <Camera className="h-4 w-4" />
+                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                  </label>
+                )}
               </div>
               
               <h2 className="text-lg font-black text-secondary-900 leading-tight">

@@ -4,8 +4,10 @@ import { ShoppingCart, ChefHat, Users, LogOut, ChevronDown, User, MapPin, Search
 import QuickBiteLogo from './QuickBiteLogo';
 import NotificationBadge from './NotificationBadge';
 import { toast } from 'react-toastify';
+import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
+  const { toggleCart, cart, clearCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   const userRole = localStorage.getItem('userRole');
@@ -36,6 +38,7 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userRole');
+    clearCart();
     navigate('/login');
   };
 
@@ -64,7 +67,7 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-white text-gray-800 shadow-md">
+    <nav className="bg-white text-gray-800 shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center space-x-3 flex-shrink-0">
@@ -164,13 +167,18 @@ const Navbar = () => {
                       toast.info('Debes iniciar sesión para usar el carrito');
                       navigate('/login');
                     } else {
-                      navigate('/menu');
+                      toggleCart();
                     }
                   }}
-                  className="p-2 text-gray-500 hover:text-primary transition-colors hover:bg-gray-50 rounded-full" 
+                  className="p-2 text-gray-500 hover:text-primary transition-colors hover:bg-gray-50 rounded-full relative" 
                   title="Ver Carrito"
                 >
                   <ShoppingCart className="h-5 w-5" />
+                  {userRole && cart.length > 0 && (
+                    <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-1 text-[10px] font-bold leading-none text-white transform translate-x-1/4 -translate-y-1/4 bg-primary rounded-full">
+                      {cart.length}
+                    </span>
+                  )}
                 </button>
               )}
               {userRole && <NotificationBadge />}

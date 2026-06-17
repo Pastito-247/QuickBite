@@ -44,6 +44,8 @@ const Orders = () => {
     id: p.numeroPedido || `PED-${p.id}`,
     backendId: p.id,
     status: mapEstado(p.estado),
+    subtotal: Number(p.subtotal) || 0,
+    deliveryFee: Number(p.costoEnvio) || 0,
     total: Number(p.total) || 0,
     createdAt: p.fechaCreacion,
     estimatedTime: p.tiempoEstimadoMinutos || 0,
@@ -234,7 +236,7 @@ const Orders = () => {
         <h1 className="text-3xl font-bold text-secondary-900">Mis Pedidos</h1>
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => navigate('/menu')}
+            onClick={() => navigate('/restaurants')}
             className="flex items-center px-5 py-2.5 bg-primary text-white font-semibold rounded-lg hover:bg-primary-600 transition-colors shadow-sm"
           >
             <ShoppingBag className="h-5 w-5 mr-2" />
@@ -266,12 +268,12 @@ const Orders = () => {
         <div className="text-center py-12">
           <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-600 mb-2">No hay pedidos {activeTab === 'active' ? 'activos' : 'en el historial'}</h2>
-          {activeTab === 'active' && <p className="text-gray-500 mb-6">¡Haz tu primer pedido en nuestro menú!</p>}
+          {activeTab === 'active' && <p className="text-gray-500 mb-6">¡Explora nuestros restaurantes y haz tu primer pedido!</p>}
           <a
-            href="/menu"
+            href="/restaurants"
             className="inline-block px-6 py-3 bg-primary text-white rounded-md hover:bg-primary-600 transition-colors"
           >
-            Ver Menú
+            Ver Restaurantes
           </a>
         </div>
       ) : (
@@ -401,12 +403,14 @@ const Orders = () => {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-600">Subtotal:</span>
                     <span className="font-medium">
-                      ${selectedOrder.total.toLocaleString('es-CL')}
+                      ${selectedOrder.subtotal.toLocaleString('es-CL')}
                     </span>
                   </div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-gray-600">Delivery:</span>
-                    <span className="font-medium">$0</span>
+                    <span className="font-medium">
+                      {selectedOrder.deliveryFee === 0 ? 'Gratis' : `$${selectedOrder.deliveryFee.toLocaleString('es-CL')}`}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center pt-2 border-t">
                     <span className="text-lg font-semibold">Total:</span>

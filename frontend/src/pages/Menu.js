@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { toast } from 'react-toastify';
 import { Plus, Minus, ShoppingCart, Clock, DollarSign, Star, Truck, ArrowLeft, UtensilsCrossed, Search, X } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 
 const mockRestaurantNames = {
   1: 'Burger Queen',
@@ -15,14 +16,14 @@ const mockRestaurantNames = {
 };
 
 const restaurantDetails = {
-  1: { name: 'Burger Queen', type: 'Hamburguesas & Fast Food', rating: 4.8, time: '15-25 min', deliveryFee: '$1.50', gradient: 'from-orange-500 via-amber-500 to-orange-600', logo: '/logo_burger_queen.png' },
-  2: { name: 'Pizza Hub', type: 'Pizzas & Italiana', rating: 4.6, time: '20-35 min', deliveryFee: 'Gratis', gradient: 'from-red-500 via-rose-600 to-red-600', logo: '/logo_pizza_hub.png' },
-  3: { name: 'Taco Fiesta', type: 'Tacos & Antojos Mexicanos', rating: 4.7, time: '10-20 min', deliveryFee: '$1.00', gradient: 'from-yellow-500 via-orange-500 to-red-500', logo: '/logo_taco_fiesta.png' },
-  4: { name: 'Sushi Zen', type: 'Sushi & Gastronomía Japonesa', rating: 4.9, time: '30-45 min', deliveryFee: '$2.50', gradient: 'from-indigo-600 via-blue-500 to-cyan-500', logo: '/logo_sushi_zen.png' },
-  5: { name: 'Green Bowl', type: 'Saludable & Bowls Orgánicos', rating: 4.5, time: '15-20 min', deliveryFee: '$1.00', gradient: 'from-emerald-600 via-teal-500 to-emerald-500', logo: '/logo_green_bowl.png' },
-  6: { name: 'El Asador', type: 'Carnes a la Parrilla', rating: 4.8, time: '35-50 min', deliveryFee: '$3.00', gradient: 'from-amber-600 via-yellow-700 to-amber-800', logo: '/logo_el_asador.png' },
-  7: { name: 'Wok Express', type: 'Comida Asiática & Woks', rating: 4.4, time: '20-30 min', deliveryFee: 'Gratis', gradient: 'from-purple-600 via-indigo-500 to-indigo-600', logo: '/logo_wok_express.png' },
-  8: { name: 'La Crêperie', type: 'Postres & Crêpes Dulces', rating: 4.7, time: '15-25 min', deliveryFee: '$1.20', gradient: 'from-pink-500 via-rose-500 to-pink-600', logo: '/logo_la_creperie.png' },
+  1: { name: 'Burger Queen', type: 'Hamburguesas & Fast Food', rating: 4.8, time: '15-25 min', deliveryFee: '$1.50', gradient: 'from-orange-500 via-amber-500 to-orange-600', logo: '/logo_burger_queen.png', banner: '/banner_burger_queen.png' },
+  2: { name: 'Pizza Hub', type: 'Pizzas & Italiana', rating: 4.6, time: '20-35 min', deliveryFee: 'Gratis', gradient: 'from-red-500 via-rose-600 to-red-600', logo: '/logo_pizza_hub.png', banner: '/banner_pizza_hub.png' },
+  3: { name: 'Taco Fiesta', type: 'Tacos & Antojos Mexicanos', rating: 4.7, time: '10-20 min', deliveryFee: '$1.00', gradient: 'from-yellow-500 via-orange-500 to-red-500', logo: '/logo_taco_fiesta.png', banner: '/banner_taco_fiesta.png' },
+  4: { name: 'Sushi Zen', type: 'Sushi & Gastronomía Japonesa', rating: 4.9, time: '30-45 min', deliveryFee: '$2.50', gradient: 'from-indigo-600 via-blue-500 to-cyan-500', logo: '/logo_sushi_zen.png', banner: '/banner_sushi_zen.png' },
+  5: { name: 'Green Bowl', type: 'Saludable & Bowls Orgánicos', rating: 4.5, time: '15-20 min', deliveryFee: '$1.00', gradient: 'from-emerald-600 via-teal-500 to-emerald-500', logo: '/logo_green_bowl.png', banner: '/banner_green_bowl.png' },
+  6: { name: 'El Asador', type: 'Carnes a la Parrilla', rating: 4.8, time: '35-50 min', deliveryFee: '$3.00', gradient: 'from-amber-600 via-yellow-700 to-amber-800', logo: '/logo_el_asador.png', banner: '/banner_el_asador.png' },
+  7: { name: 'Wok Express', type: 'Comida Asiática & Woks', rating: 4.4, time: '20-30 min', deliveryFee: 'Gratis', gradient: 'from-purple-600 via-indigo-500 to-indigo-600', logo: '/logo_wok_express.png', banner: '/banner_wok_express.png' },
+  8: { name: 'La Crêperie', type: 'Postres & Crêpes Dulces', rating: 4.7, time: '15-25 min', deliveryFee: '$1.20', gradient: 'from-pink-500 via-rose-500 to-pink-600', logo: '/logo_la_creperie.png', banner: '/banner_la_creperie.png' },
 };
 
 
@@ -182,7 +183,7 @@ const getFoodImageUrl = (itemName, category) => {
 
 const Menu = () => {
   const [menuItems, setMenuItems] = useState([]);
-  const [cart, setCart] = useState([]);
+  const { addToCart } = useCart();
   const [loading, setLoading] = useState(true);
   const [selectedCustomizationItem, setSelectedCustomizationItem] = useState(null);
   const [customizationNote, setCustomizationNote] = useState('');
@@ -305,142 +306,17 @@ const Menu = () => {
   };
 
   const confirmAddToCart = () => {
-    const item = selectedCustomizationItem;
-    const cartId = customizationNote ? `${item.id}-${Date.now()}` : `${item.id}-default`;
-    
-    const existingItem = cart.find(cartItem => cartItem.cartItemId === cartId);
-    
-    if (existingItem) {
-      setCart(cart.map(cartItem =>
-        cartItem.cartItemId === cartId
-          ? { ...cartItem, quantity: cartItem.quantity + 1 }
-          : cartItem
-      ));
-    } else {
-      setCart([...cart, { ...item, cartItemId: cartId, quantity: 1, notesItem: customizationNote }]);
-    }
-    toast.success(`${item.name} agregado al carrito`);
-    setSelectedCustomizationItem(null);
-    setCustomizationNote('');
-  };
-
-  const updateQuantity = (cartItemId, change) => {
-    setCart(cart.map(item => {
-      if (item.cartItemId === cartItemId) {
-        const newQuantity = item.quantity + change;
-        return newQuantity > 0 ? { ...item, quantity: newQuantity } : null;
-      }
-      return item;
-    }).filter(Boolean));
-  };
-
-  const getTotalPrice = () => {
-    return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-  };
-
-  const getDeliveryFeeValue = () => {
-    if (details.deliveryFee === 'Gratis') return 0;
-    const match = details.deliveryFee.match(/[\d.]+/);
-    if (match) {
-      const val = parseFloat(match[0]);
-      return val < 10 ? val * 1000 : val;
-    }
-    return 0;
-  };
-
-  const proceedToCheckout = async () => {
-    if (cart.length === 0) {
-      toast.error('El carrito está vacío');
-      return;
-    }
-
-    const userId = localStorage.getItem('userId');
-    const userName = localStorage.getItem('userName') || 'Cliente QuickBite';
-    const userEmail = localStorage.getItem('userEmail') || 'cliente@quickbite.com';
-
-    if (!userId) {
-      toast.error('Debes iniciar sesion para hacer un pedido');
+    const userRole = localStorage.getItem('userRole');
+    if (!userRole) {
+      toast.info('Debes iniciar sesión para agregar productos al carrito');
       navigate('/login');
       return;
     }
-
-    const existingOrders = JSON.parse(localStorage.getItem('mockClientOrders') || '[]');
-    if (existingOrders.length === 0) {
-      const confirmFirstOrder = window.confirm(
-        '¡Es tu primer pedido!\n\nConfirmaremos que enviaremos tu comida a tu dirección principal guardada (Av. Providencia 1234, Depto 502, Santiago). ¿Deseas continuar?'
-      );
-      if (!confirmFirstOrder) return;
-    }
-
-    try {
-      for (const item of cart) {
-        if (item.id < 100) {
-          const response = await fetch(`http://localhost:8083/api/menu/${item.id}/validate-stock?quantity=${item.quantity}`);
-          if (response.ok) {
-            const data = await response.json();
-            if (!data.hasSufficientStock) {
-              toast.error(`No hay suficiente stock para: ${item.name}`);
-              return;
-            }
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error validando stock, continuando de todas formas:', error);
-    }
-
-    const payload = {
-      clienteId: Number(userId),
-      nombreCliente: userName,
-      emailCliente: userEmail,
-      telefonoCliente: '+56900000000',
-      direccionEntrega: localStorage.getItem('deliveryAddress') || 'Av. Providencia 1234, Depto 502, Santiago',
-      metodoPago: 'EFECTIVO',
-      costoEnvio: getDeliveryFeeValue(),
-      notasCliente: '',
-      items: cart.map(it => ({
-        productoId: it.id,
-        nombreProducto: it.name,
-        descripcionProducto: it.description || '',
-        cantidad: it.quantity,
-        precioUnitario: Number(it.price),
-        notasItem: it.notesItem || ''
-      }))
-    };
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/v1/pedidos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error('Error creando pedido:', errText);
-        toast.error('No se pudo registrar el pedido en el servidor');
-        return;
-      }
-
-      const orderData = await response.json();
-      setCart([]);
-      toast.info('Redirigiendo a pasarela de pago...');
-      
-      navigate('/payment', { 
-        state: { 
-          orderId: orderData.numeroPedido,
-          backendId: orderData.id,
-          amount: orderData.total 
-        } 
-      });
-    } catch (err) {
-      console.error(err);
-      toast.error('Error de conexion al crear el pedido');
-    }
+    const item = selectedCustomizationItem;
+    addToCart(item, customizationNote, { id: parseInt(id) || 1, name: details.name, deliveryFee: details.deliveryFee });
+    toast.success(`${item.name} agregado al carrito`);
+    setSelectedCustomizationItem(null);
+    setCustomizationNote('');
   };
 
   const filteredMenuItems = menuItems.filter(item => {
@@ -510,9 +386,19 @@ const Menu = () => {
   return (
     <div className="bg-appbg min-h-screen pb-16 animate-fade-in">
       
-      {/* RESTAURANT HERO COVER BANNER (Estilo PedidosYa exacto) */}
-      <div className={`bg-gradient-to-br ${details.gradient} text-white h-44 relative border-b border-gray-100 shadow-sm`}>
-        <div className="absolute inset-0 opacity-15 bg-[radial-gradient(#FFF_1px,transparent_1px)] [background-size:16px_16px]"></div>
+      {/* RESTAURANT HERO COVER BANNER */}
+      <div className={`bg-gradient-to-br ${details.gradient} text-white h-44 relative border-b border-gray-100 shadow-sm overflow-hidden`}>
+        {/* Imagen de banner del restaurante */}
+        {details.banner && (
+          <img
+            src={details.banner}
+            alt={`Banner ${details.name}`}
+            className="absolute inset-0 w-full h-full object-cover opacity-60"
+            onError={(e) => { e.target.style.display = 'none'; }}
+          />
+        )}
+        {/* Overlay oscuro para legibilidad */}
+        <div className="absolute inset-0 bg-black/30" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full relative z-10 flex items-start pt-6">
           {/* Botón de Retorno */}
           <button 
@@ -524,6 +410,7 @@ const Menu = () => {
           </button>
         </div>
       </div>
+
 
       {/* RESTAURANT PROFILE CARD OVERLAPPING */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-20 md:-mt-24 relative z-20 mb-8">
@@ -717,87 +604,6 @@ const Menu = () => {
                 <p className="text-sm text-gray-500">Prueba ajustando el término de búsqueda en la barra superior.</p>
               </div>
             )}
-          </div>
-
-          {/* Columna Derecha: Tu Pedido (Carrito) */}
-          <div className="lg:col-span-1">
-            <div className="bg-white border border-gray-100 rounded-3xl p-6 sticky top-20 shadow-sm">
-              <h2 className="text-lg font-black text-secondary-900 mb-4 pb-2 border-b border-gray-100 flex items-center">
-                <ShoppingCart className="h-5 w-5 text-primary mr-2" />
-                Tu pedido
-              </h2>
-              
-              {cart.length === 0 ? (
-                <p className="text-gray-400 text-xs font-bold text-center py-10">El carrito está vacío</p>
-              ) : (
-                <>
-                  <div className="space-y-3 mb-4 max-h-96 overflow-y-auto">
-                    {cart.map(item => (
-                      <div key={item.cartItemId || item.id} className="flex items-center justify-between py-2.5 border-b border-gray-50">
-                        <div className="flex-1 pr-2">
-                          <h4 className="text-sm font-bold text-secondary-900 leading-snug">{item.name}</h4>
-                          {item.notesItem && (
-                            <p className="text-[10px] text-gray-400 italic">Nota: {item.notesItem}</p>
-                          )}
-                          <p className="text-xs text-primary font-bold mt-0.5">
-                            ${item.price.toLocaleString('es-CL')} c/u
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-1.5 flex-shrink-0">
-                          <button
-                            onClick={() => updateQuantity(item.cartItemId || item.id, -1)}
-                            className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-primary transition-colors border border-gray-200"
-                          >
-                            <Minus className="h-3.5 w-3.5" />
-                          </button>
-                          <span className="w-6 text-center text-xs font-bold text-secondary-900">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.cartItemId || item.id, 1)}
-                            className="p-1 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-primary transition-colors border border-gray-200"
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <div className="border-t border-gray-100 pt-4 space-y-2.5">
-                    <div className="flex justify-between items-center text-xs font-bold text-gray-500">
-                      <span>Subtotal:</span>
-                      <span className="text-secondary-900 font-extrabold">${getTotalPrice().toLocaleString('es-CL')}</span>
-                    </div>
-                    
-                    <div className="flex justify-between items-center text-xs font-bold text-gray-500">
-                      <span>Envío:</span>
-                      <span className={getDeliveryFeeValue() === 0 ? 'text-accent font-extrabold' : 'text-secondary-900 font-extrabold'}>
-                        {getDeliveryFeeValue() === 0 ? 'Gratis' : `$${getDeliveryFeeValue().toLocaleString('es-CL')}`}
-                      </span>
-                    </div>
-
-                    {getDeliveryFeeValue() === 0 && (
-                      <div className="bg-emerald-50 text-accent text-[10px] font-extrabold p-2 rounded-lg text-center border border-emerald-100">
-                        🎉 ¡Tu despacho para este local es gratis!
-                      </div>
-                    )}
-                    
-                    <div className="flex justify-between items-center pt-2.5 border-t border-gray-100 mb-4">
-                      <span className="text-sm font-black text-secondary-900">Total a pagar:</span>
-                      <span className="text-xl font-black text-primary">
-                        ${(getTotalPrice() + getDeliveryFeeValue()).toLocaleString('es-CL')}
-                      </span>
-                    </div>
-                    <button
-                      onClick={proceedToCheckout}
-                      className="w-full bg-primary hover:bg-primary-600 text-white py-3.5 rounded-xl font-black text-xs transition-all shadow-md shadow-orange-100 flex items-center justify-center hover:scale-[1.01] active:scale-[0.99]"
-                    >
-                      <DollarSign className="h-4 w-4 mr-1.5" />
-                      Proceder al Pago
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
           </div>
 
         </div>
