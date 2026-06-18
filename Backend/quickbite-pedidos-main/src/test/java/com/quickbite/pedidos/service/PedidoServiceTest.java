@@ -74,7 +74,7 @@ class PedidoServiceTest {
         itemPedidoRequest.setProductoId(1L);
         itemPedidoRequest.setNombreProducto("Burger");
         itemPedidoRequest.setCantidad(2);
-        itemPedidoRequest.setPrecioUnitario(10.99);
+        itemPedidoRequest.setPrecioUnitario(new BigDecimal("10.99"));
 
         pedidoRequest = new PedidoRequest();
         pedidoRequest.setClienteId(1L);
@@ -309,9 +309,9 @@ class PedidoServiceTest {
             new HashMap<>(Map.of("id", 1L, "name", "Restaurant 1"))
         ));
         
-        when(pedidoRepository.statsByRestaurant()).thenReturn(Arrays.asList(
-            new Object[]{1L, 50L, new BigDecimal("2500.00")}
-        ));
+        when(pedidoRepository.statsByRestaurant()).thenReturn(
+            Collections.singletonList(new Object[]{1L, 50L, new BigDecimal("2500.00")})
+        );
 
         // When
         DashboardStatsResponse result = pedidoService.obtenerDashboardStats();
