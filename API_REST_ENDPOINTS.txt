@@ -1,0 +1,601 @@
+API REST ENDPOINTS - QUICKBITE
+===============================
+Fecha: 17 de junio de 2026
+Proyecto: Sistema de Pedidos de Comida QuickBite
+
+INTRODUCCIÓN
+============
+Este documento describe los endpoints de la API REST de cada microservicio del sistema QuickBite para ser utilizados en Postman o Swagger.
+
+CONFIGURACIÓN GENERAL
+====================
+Base URL: http://localhost:8080 (para desarrollo)
+Content-Type: application/json
+Authentication: Bearer Token (JWT)
+
+1. SERVICIO DE AUTENTICACIÓN (quickbite-Auth-main)
+==================================================
+Port: 8081
+Swagger UI: http://localhost:8081/swagger-ui.html
+
+Endpoints:
+
+POST /api/auth/register
+Descripción: Registrar un nuevo usuario
+Request Body:
+{
+  "username": "usuario",
+  "email": "usuario@example.com",
+  "password": "password123",
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "phoneNumber": "1234567890",
+  "role": "CLIENT"
+}
+Response: AuthenticationResponse
+
+POST /api/auth/authenticate
+Descripción: Autenticar usuario y obtener token
+Request Body:
+{
+  "username": "usuario",
+  "password": "password123"
+}
+Response: AuthenticationResponse
+
+POST /api/auth/refresh
+Descripción: Refrescar token de acceso
+Request Body:
+{
+  "refreshToken": "token_de_refresco"
+}
+Response: AuthenticationResponse
+
+POST /api/auth/validate
+Descripción: Validar token de acceso
+Headers: Authorization: Bearer {token}
+Response: Boolean
+
+GET /api/auth/profile/{id}
+Descripción: Obtener perfil de usuario por ID
+Headers: Authorization: Bearer {token}
+Response: User
+
+PUT /api/auth/profile/{id}
+Descripción: Actualizar perfil de usuario
+Headers: Authorization: Bearer {token}
+Request Body:
+{
+  "firstName": "Juan",
+  "lastName": "Pérez",
+  "email": "usuario@example.com",
+  "phoneNumber": "1234567890",
+  "profileImage": "url_imagen",
+  "address": "Dirección"
+}
+Response: User
+
+2. SERVICIO DE INVENTARIO (quickbite-ms-inventario)
+==================================================
+Port: 8082
+Swagger UI: http://localhost:8082/swagger-ui.html
+
+Endpoints:
+
+GET /api/inventory
+Descripción: Obtener todos los ingredientes activos
+Response: List<Ingredient>
+
+POST /api/inventory
+Descripción: Crear nuevo ingrediente
+Request Body:
+{
+  "name": "Tomate",
+  "description": "Tomate fresco",
+  "category": "Verduras",
+  "unit": "kg",
+  "currentStock": 100,
+  "minimumStock": 10,
+  "costPerUnit": 2.50,
+  "supplier": "Proveedor A"
+}
+Response: Ingredient
+
+GET /api/inventory/{id}
+Descripción: Obtener ingrediente por ID
+Response: Ingredient
+
+PUT /api/inventory/{id}
+Descripción: Actualizar ingrediente
+Request Body:
+{
+  "name": "Tomate",
+  "description": "Tomate fresco",
+  "category": "Verduras",
+  "unit": "kg",
+  "currentStock": 150,
+  "minimumStock": 10,
+  "costPerUnit": 2.50,
+  "supplier": "Proveedor A"
+}
+Response: Ingredient
+
+DELETE /api/inventory/{id}
+Descripción: Eliminar ingrediente (soft delete)
+Response: void
+
+POST /api/inventory/deduct-stock/{id}
+Descripción: Deductir stock de ingrediente
+Request Body:
+{
+  "quantity": 10
+}
+Response: void
+
+POST /api/inventory/add-stock/{id}
+Descripción: Añadir stock a ingrediente
+Request Body:
+{
+  "quantity": 20
+}
+Response: void
+
+POST /api/inventory/check-availability
+Descripción: Verificar disponibilidad de múltiples ingredientes
+Request Body:
+{
+  "ingredientIds": [1, 2, 3],
+  "quantities": [5, 10, 3]
+}
+Response: Map<String, Object>
+
+GET /api/inventory/critical
+Descripción: Obtener ingredientes con stock crítico
+Response: List<Ingredient>
+
+GET /api/inventory/out-of-stock
+Descripción: Obtener ingredientes agotados
+Response: List<Ingredient>
+
+3. SERVICIO DE MENÚ (quickbite-menu-service)
+============================================
+Port: 8083
+Swagger UI: http://localhost:8083/swagger-ui.html
+
+Endpoints:
+
+GET /api/menu/available
+Descripción: Obtener platos disponibles
+Response: List<MenuItemResponse>
+
+POST /api/menu
+Descripción: Crear nuevo plato
+Request Body:
+{
+  "name": "Hamburguesa",
+  "description": "Hamburguesa con queso",
+  "price": 12.99,
+  "category": "Hamburguesas",
+  "imageUrl": "url_imagen",
+  "restaurantId": 1
+}
+Response: MenuItemResponse
+
+GET /api/menu/{id}
+Descripción: Obtener plato por ID
+Response: MenuItemResponse
+
+PUT /api/menu/{id}/price
+Descripción: Actualizar precio de plato
+Request Body:
+{
+  "price": 14.99
+}
+Response: MenuItemResponse
+
+PUT /api/menu/{id}/availability
+Descripción: Actualizar disponibilidad de plato
+Request Body:
+{
+  "available": true
+}
+Response: MenuItemResponse
+
+PUT /api/menu/{id}
+Descripción: Actualizar plato completo
+Request Body:
+{
+  "name": "Hamburguesa",
+  "description": "Hamburguesa con queso y bacon",
+  "price": 14.99,
+  "category": "Hamburguesas",
+  "imageUrl": "url_imagen",
+  "restaurantId": 1
+}
+Response: MenuItemResponse
+
+DELETE /api/menu/{id}
+Descripción: Eliminar plato
+Response: void
+
+GET /api/menu
+Descripción: Obtener todos los platos
+Response: List<MenuItemResponse>
+
+GET /api/menu/category/{category}
+Descripción: Obtener platos por categoría
+Response: List<MenuItemResponse>
+
+GET /api/menu/unavailable
+Descripción: Obtener platos no disponibles
+Response: List<MenuItemResponse>
+
+GET /api/menu/categories
+Descripción: Obtener todas las categorías
+Response: List<String>
+
+GET /api/menu/categories/count
+Descripción: Obtener conteo de platos por categoría
+Response: Map<String, Long>
+
+GET /api/menu/categories/popular
+Descripción: Obtener categorías populares
+Response: List<String>
+
+4. SERVICIO DE PEDIDOS (quickbite-pedidos-main)
+================================================
+Port: 8084
+Swagger UI: http://localhost:8084/swagger-ui.html
+
+Endpoints:
+
+POST /api/pedidos
+Descripción: Crear nuevo pedido
+Request Body:
+{
+  "clienteId": 1,
+  "nombreCliente": "Juan Pérez",
+  "emailCliente": "juan@example.com",
+  "telefonoCliente": "1234567890",
+  "direccionEntrega": "Calle Principal 123",
+  "metodoPago": "TARJETA_CREDITO",
+  "costoEnvio": 5.99,
+  "items": [
+    {
+      "productoId": 1,
+      "nombreProducto": "Hamburguesa",
+      "cantidad": 2,
+      "precioUnitario": 12.99
+    }
+  ]
+}
+Response: PedidoResponse
+
+GET /api/pedidos/{id}
+Descripción: Obtener pedido por ID
+Response: PedidoResponse
+
+GET /api/pedidos/numero/{numeroPedido}
+Descripción: Obtener pedido por número de pedido
+Response: PedidoResponse
+
+GET /api/pedidos/cliente/{clienteId}
+Descripción: Obtener pedidos de un cliente
+Response: List<PedidoResponse>
+
+GET /api/pedidos/estado/{estado}
+Descripción: Obtener pedidos por estado
+Response: List<PedidoResponse>
+
+GET /api/pedidos
+Descripción: Obtener todos los pedidos (paginado)
+Query Parameters: page, size, sort
+Response: Page<PedidoResponse>
+
+PUT /api/pedidos/{id}/estado
+Descripción: Actualizar estado de pedido
+Request Body:
+{
+  "estado": "EN_PREPARACION"
+}
+Response: PedidoResponse
+
+PUT /api/pedidos/{id}/notas-restaurante
+Descripción: Actualizar notas del restaurante
+Request Body:
+{
+  "notas": "Sin cebolla por favor"
+}
+Response: PedidoResponse
+
+DELETE /api/pedidos/{id}
+Descripción: Cancelar pedido
+Response: void
+
+GET /api/pedidos/dashboard/stats
+Descripción: Obtener estadísticas del dashboard
+Response: DashboardStatsResponse
+
+5. SERVICIO DE COCINA (quickbite-kitchen-service)
+==================================================
+Port: 8085
+Swagger UI: http://localhost:8085/swagger-ui.html
+
+Endpoints:
+
+POST /api/kitchen/orders
+Descripción: Crear nueva orden de cocina
+Request Body:
+{
+  "orderNumber": "ORD-001",
+  "customerName": "Juan Pérez",
+  "items": ["Hamburguesa", "Papas fritas"],
+  "estimatedPreparationTime": 30,
+  "notes": "Sin cebolla",
+  "orderItems": [
+    {
+      "menuItemId": 1,
+      "itemName": "Hamburguesa",
+      "quantity": 2
+    }
+  ]
+}
+Response: OrderResponse
+
+GET /api/kitchen/orders/active
+Descripción: Obtener órdenes activas
+Response: List<OrderResponse>
+
+GET /api/kitchen/orders/status/{status}
+Descripción: Obtener órdenes por estado
+Response: List<OrderResponse>
+
+GET /api/kitchen/orders/number/{orderNumber}
+Descripción: Obtener orden por número
+Response: OrderResponse
+
+GET /api/kitchen/orders/{id}
+Descripción: Obtener orden por ID
+Response: OrderResponse
+
+PUT /api/kitchen/orders/{id}/status
+Descripción: Actualizar estado de orden
+Request Body:
+{
+  "status": "EN_PREPARACION"
+}
+Response: OrderResponse
+
+PUT /api/kitchen/orders/number/{orderNumber}/status
+Descripción: Actualizar estado por número de orden
+Request Body:
+{
+  "status": "LISTO_ENTREGA"
+}
+Response: OrderResponse
+
+GET /api/kitchen/orders/date-range
+Descripción: Obtener órdenes por rango de fechas
+Query Parameters: startDate, endDate
+Response: List<OrderResponse>
+
+GET /api/kitchen/orders/count/{status}
+Descripción: Obtener conteo de órdenes por estado
+Query Parameters: since
+Response: Long
+
+6. SERVICIO DE NOTIFICACIONES (quickbite-ms-notificaciones)
+============================================================
+Port: 8086
+Swagger UI: http://localhost:8086/swagger-ui.html
+
+Endpoints:
+
+POST /api/notificaciones
+Descripción: Crear nueva notificación
+Request Body:
+{
+  "tipo": "INVENTARIO_CRITICO",
+  "mensaje": "Stock bajo de Tomate",
+  "idReferencia": "ING001",
+  "idRestaurante": 1,
+  "idUsuarioDestino": 45
+}
+Response: NotificacionResponse
+
+GET /api/notificaciones/no-leidas/{idUsuario}
+Descripción: Obtener notificaciones no leídas de usuario
+Response: List<NotificacionResponse>
+
+PUT /api/notificaciones/{id}/leida
+Descripción: Marcar notificación como leída
+Response: void
+
+GET /api/notificaciones/no-leidas/{idUsuario}/paginadas
+Descripción: Obtener notificaciones no leídas paginadas
+Query Parameters: page, size
+Response: Page<NotificacionResponse>
+
+GET /api/notificaciones/restaurante/{idRestaurante}
+Descripción: Obtener notificaciones por restaurante
+Query Parameters: fechaInicio
+Response: List<NotificacionResponse>
+
+GET /api/notificaciones/restaurante/{idRestaurante}/paginadas
+Descripción: Obtener notificaciones por restaurante paginadas
+Query Parameters: fechaInicio, page, size
+Response: Page<NotificacionResponse>
+
+7. SERVICIO DE PAGOS (quickbite-payment-service)
+==================================================
+Port: 8087
+Swagger UI: http://localhost:8087/swagger-ui.html
+
+Endpoints:
+
+POST /api/payments/process
+Descripción: Procesar pago
+Request Body:
+{
+  "orderId": "ORD-001",
+  "amount": 25.98,
+  "currency": "USD",
+  "paymentMethod": "CREDIT_CARD",
+  "paymentDetails": {
+    "cardNumber": "4111111111111111",
+    "expiryDate": "12/25",
+    "cvv": "123"
+  }
+}
+Response: PaymentResponse
+
+GET /api/payments/{id}
+Descripción: Obtener pago por ID
+Response: PaymentResponse
+
+GET /api/payments/order/{orderId}
+Descripción: Obtener pago por ID de orden
+Response: PaymentResponse
+
+GET /api/payments/status/{status}
+Descripción: Obtener pagos por estado
+Response: List<PaymentResponse>
+
+POST /api/payments/{id}/refund
+Descripción: Reembolsar pago
+Response: PaymentResponse
+
+POST /api/payments/wallet/deduct
+Descripción: Deductir saldo de billetera
+Request Body:
+{
+  "userId": "user123",
+  "amount": 25.98
+}
+Response: void
+
+POST /api/payments/wallet/add
+Descripción: Añadir saldo a billetera
+Request Body:
+{
+  "userId": "user123",
+  "amount": 50.00
+}
+Response: void
+
+GET /api/payments/wallet/{userId}
+Descripción: Obtener saldo de billetera
+Response: Wallet
+
+8. EUREKA SERVER (quickbite-eureka-server)
+=========================================
+Port: 8761
+Dashboard: http://localhost:8761
+
+Endpoints:
+
+GET /
+Descripción: Dashboard de Eureka Server
+Response: HTML Dashboard
+
+GET /eureka/apps
+Descripción: Obtener todas las aplicaciones registradas
+Response: JSON con servicios registrados
+
+GET /eureka/apps/{serviceName}
+Descripción: Obtener instancias de un servicio específico
+Response: JSON con instancias del servicio
+
+9. API GATEWAY (api-gateway)
+============================
+Port: 8080
+No tiene endpoints REST específicos, actúa como proxy
+
+Rutas Configuradas:
+- /api/auth/** → quickbite-Auth-main (8081)
+- /api/inventory/** → quickbite-ms-inventario (8082)
+- /api/menu/** → quickbite-menu-service (8083)
+- /api/pedidos/** → quickbite-pedidos-main (8084)
+- /api/kitchen/** → quickbite-kitchen-service (8085)
+- /api/notificaciones/** → quickbite-ms-notificaciones (8086)
+- /api/payments/** → quickbite-payment-service (8087)
+
+CONFIGURACIÓN DE POSTMAN
+=========================
+
+1. Crear un nuevo Workspace en Postman
+2. Crear una Collection llamada "QuickBite API"
+3. Crear carpetas por servicio:
+   - Authentication
+   - Inventory
+   - Menu
+   - Orders
+   - Kitchen
+   - Notifications
+   - Payments
+
+4. Configurar variables de entorno:
+   - base_url: http://localhost:8080
+   - auth_port: 8081
+   - inventory_port: 8082
+   - menu_port: 8083
+   - orders_port: 8084
+   - kitchen_port: 8085
+   - notifications_port: 8086
+   - payments_port: 8087
+   - token: (obtenido después de autenticación)
+
+5. Configurar Pre-request Script para autenticación:
+```javascript
+if (pm.environment.get("token")) {
+    pm.request.headers.add({
+        key: 'Authorization',
+        value: 'Bearer ' + pm.environment.get("token")
+    });
+}
+```
+
+6. Ejemplo de configuración de endpoint:
+   - Method: POST
+   - URL: {{base_url}}/api/auth/authenticate
+   - Headers: Content-Type: application/json
+   - Body: Raw JSON
+
+AUTENTICACIÓN
+=============
+Para acceder a endpoints protegidos, primero debe autenticarse:
+
+1. POST /api/auth/authenticate
+2. Copiar el token del response
+3. Guardarlo en la variable de entorno "token"
+4. Usar el token en los headers: Authorization: Bearer {{token}}
+
+CÓDIGOS DE RESPUESTA HTTP
+===========================
+200 OK: Solicitud exitosa
+201 Created: Recurso creado exitosamente
+400 Bad Request: Solicitud inválida
+401 Unauthorized: No autorizado (token inválido o ausente)
+403 Forbidden: Prohibido (sin permisos)
+404 Not Found: Recurso no encontrado
+500 Internal Server Error: Error del servidor
+
+ERRORES COMUNES
+===============
+- 401 Unauthorized: Token expirado o inválido
+- 404 Not Found: Endpoint o recurso no existe
+- 500 Internal Server Error: Error en el servidor
+- 503 Service Unavailable: Servicio no disponible (circuit breaker activado)
+
+NOTAS
+=====
+- Todos los endpoints que requieren autenticación deben incluir el header Authorization
+- Los tiempos de espera (timeout) están configurados en 30 segundos
+- Para producción, cambiar las URLs de localhost a las URLs de producción
+- Se recomienda usar HTTPS en producción
+
+---
+Este documento fue generado el 17 de junio de 2026
+Total de Endpoints: 60+
+Total de Servicios: 9
+Estado: DOCUMENTACIÓN COMPLETA ✓

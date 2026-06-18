@@ -1,0 +1,79 @@
+REPOSITORIOS GITHUB - QUICKBITE
+================================
+Fecha: 17 de junio de 2026
+Proyecto: Sistema de Pedidos de Comida QuickBite
+
+MICROSERVICIOS BACKEND
+=====================
+
+1. Servicio de Autenticación
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/quickbite-Auth-main
+   - Descripción: Manejo de autenticación de usuarios, registro, login y gestión de tokens JWT
+   - Tecnologías: Spring Boot, Spring Security, JWT, MySQL
+
+2. Servicio de Inventario
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/quickbite-ms-inventario
+   - Descripción: Gestión de ingredientes y stock de inventario
+   - Tecnologías: Spring Boot, Spring Data JPA, MySQL, Resilience4j
+
+3. Servicio de Menú
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/quickbite-menu-service
+   - Descripción: Gestión de platos del menú, categorías y disponibilidad
+   - Tecnologías: Spring Boot, Spring Data JPA, MySQL, OpenAPI
+
+4. Servicio de Pedidos
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/quickbite-pedidos-main
+   - Descripción: Gestión de pedidos de clientes, estados y notificaciones
+   - Tecnologías: Spring Boot, Spring Data JPA, MySQL, Resilience4j
+
+5. Servicio de Cocina
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/quickbite-kitchen-service
+   - Descripción: Sistema de Kitchen Display System (KDS) para gestión de órdenes
+   - Tecnologías: Spring Boot, Spring Data JPA, MySQL
+
+6. Servicio de Notificaciones
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/quickbite-ms-notificaciones
+   - Descripción: Sistema de notificaciones para alertas de inventario y pedidos
+   - Tecnologías: Spring Boot, Spring Data JPA, MySQL, WebSocket
+
+7. Servicio de Pagos
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/quickbite-payment-service
+   - Descripción: Procesamiento de pagos, reembolsos y gestión de billeteras
+   - Tecnologías: Spring Boot, Spring Data JPA, MySQL, Resilience4j
+
+8. Eureka Server
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/quickbite-eureka-server
+   - Descripción: Servicio de descubrimiento de servicios (Service Discovery)
+   - Tecnologías: Spring Cloud Netflix Eureka
+
+9. API Gateway
+   - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/Backend/api-gateway
+   - Descripción: Gateway de API para enrutamiento y balanceo de carga
+   - Tecnologías: Spring Cloud Gateway, Netflix Eureka
+
+FRONTEND
+========
+
+10. Frontend React
+    - Repositorio: https://github.com/Pastito-247/QuickBite/tree/main/frontend
+    - Descripción: Aplicación web React para clientes y administradores
+    - Tecnologías: React, Axios, CSS, NPM
+
+REPOSITORIO PRINCIPAL
+====================
+
+11. Repositorio Principal
+    - Repositorio: https://github.com/Pastito-247/QuickBite
+    - Descripción: Repositorio principal que contiene todos los microservicios y el frontend
+    - Estructura:
+      - Backend/: Contiene todos los microservicios
+      - frontend/: Contiene la aplicación React
+      - GUIA_DE_USO.md: Guía de instalación y uso
+      - README.md: Documentación general del proyecto
+
+NOTAS
+=====
+- Todos los microservicios están en el mismo repositorio monorepo
+- Cada microservicio tiene su propio pom.xml para gestión de dependencias
+- El frontend está separado en la carpeta frontend/
+- Para clonar el repositorio completo: git clone https://github.com/Pastito-247/QuickBite.git
