@@ -230,7 +230,7 @@ class PedidoServiceTest {
         // Given
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(testPedido));
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(testPedido);
-        doNothing().when(menuServiceClient).consumeIngredients(anyLong(), anyInt());
+        when(menuServiceClient.consumeIngredients(anyLong(), anyInt())).thenReturn(true);
 
         // When
         PedidoResponse result = pedidoService.actualizarEstadoPedido(1L, Pedido.EstadoPedido.EN_PREPARACION);
@@ -257,7 +257,7 @@ class PedidoServiceTest {
         // Given
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(testPedido));
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(testPedido);
-        doNothing().when(kitchenServiceClient).updateOrderStatus(anyString(), anyString());
+        when(kitchenServiceClient.updateOrderStatus(anyString(), anyString())).thenReturn(true);
 
         // When
         pedidoService.cancelarPedido(1L);
@@ -301,7 +301,7 @@ class PedidoServiceTest {
         when(pedidoRepository.sumTotalVentas()).thenReturn(new BigDecimal("5000.00"));
         when(pedidoRepository.countDistinctClientes()).thenReturn(50L);
         
-        Pageable top10 = PageRequest.of(0, 10);
+        Pageable top10 = PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "fechaCreacion"));
         Page<Pedido> page = new PageImpl<>(Arrays.asList(testPedido));
         when(pedidoRepository.findAll(top10)).thenReturn(page);
         
