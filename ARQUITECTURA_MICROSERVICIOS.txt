@@ -1,0 +1,256 @@
+DIAGRAMA DE ARQUITECTURA DE MICROSERVICIOS - QUICKBITE
+=======================================================
+Fecha: 17 de junio de 2026
+Proyecto: Sistema de Pedidos de Comida QuickBite
+
+ARQUITECTURA GENERAL
+====================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENTES                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   Web App    │  │ Mobile App   │  │   Admin      │          │
+│  │   (React)    │  │  (React)     │  │  (React)     │          │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘          │
+│         │                  │                  │                   │
+│         └──────────────────┴──────────────────┘                   │
+│                            │                                     │
+└────────────────────────────┼─────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                      API GATEWAY                                │
+│            (Spring Cloud Gateway + Eureka)                      │
+│                                                                 │
+│  - Enrutamiento de solicitudes                                  │
+│  - Balanceo de carga                                            │
+│  - Autenticación y autorización                                 │
+│  - Rate limiting                                                 │
+│  - Circuit breaker                                               │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    EUREKA SERVER                                 │
+│              (Service Discovery)                                 │
+│                                                                 │
+│  - Registro de servicios                                        │
+│  - Descubrimiento de servicios                                   │
+│  - Balanceo de carga del cliente                                │
+│  - Health checks                                                 │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+        ▼                    ▼                    ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   AUTH       │    │   MENU       │    │  INVENTORY   │
+│  SERVICE     │    │  SERVICE     │    │   SERVICE    │
+│              │    │              │    │              │
+│ - Login      │    │ - Platos     │    │ - Ingredientes│
+│ - Register   │    │ - Categorías │    │ - Stock       │
+│ - JWT        │    │ - Precios    │    │ - Proveedores │
+│ - Perfiles   │    │ - Disponib.  │    │ - Alertas     │
+└──────┬───────┘    └──────┬───────┘    └──────┬───────┘
+       │                   │                   │
+       └───────────────────┴───────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    PEDIDOS SERVICE                              │
+│                                                                 │
+│  - Creación de pedidos                                          │
+│  - Gestión de estados                                           │
+│  - Validación de stock                                          │
+│  - Cálculo de totales                                           │
+│  - Notificaciones                                               │
+└────────────────────────────┬─────────────────────────────────────┘
+                             │
+        ┌────────────────────┼────────────────────┐
+        │                    │                    │
+        ▼                    ▼                    ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│   KITCHEN    │    │  PAYMENT     │    │ NOTIFICATION │
+│  SERVICE     │    │  SERVICE     │    │   SERVICE    │
+│              │    │              │    │              │
+│ - KDS        │    │ - Pagos      │    │ - Alertas     │
+│ - Estados    │    │ - Reembolsos │    │ - Email       │
+│ - Tiempos    │    │ - Billeteras │    │ - Push        │
+│ - Notif.     │    │ - Gateways   │    │ - WebSocket   │
+└──────────────┘    └──────────────┘    └──────────────┘
+
+BASES DE DATOS
+===============
+
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│  auth_db     │    │  menu_db     │    │ inventario_db│
+│              │    │              │    │              │
+│ - users      │    │ - menu_items │    │ - ingredients │
+│ - roles      │    │ - categories │    │ - categories  │
+└──────────────┘    └──────────────┘    └──────────────┘
+
+┌──────────────┐    ┌──────────────┐    ┌──────────────┐
+│  pedidos_db  │    │  kitchen_db  │    │  payment_db  │
+│              │    │              │    │              │
+│ - pedidos    │    │ - orders     │    │ - payments   │
+│ - items      │    │ - order_items│    │ - transactions│
+│              │    │              │    │ - wallets    │
+└──────────────┘    └──────────────┘    └──────────────┘
+
+┌──────────────┐
+│ notif_db     │
+│              │
+│ - notificaciones│
+│ - tipos      │
+└──────────────┘
+
+FLUJO DE DATOS
+==============
+
+1. FLUJO DE PEDIDO
+   Cliente → Frontend → API Gateway → Eureka Server
+   → Auth Service (autenticación)
+   → Menu Service (obtener platos)
+   → Inventory Service (validar stock)
+   → Orders Service (crear pedido)
+   → Kitchen Service (notificar cocina)
+   → Payment Service (procesar pago)
+   → Notification Service (confirmar pedido)
+
+2. FLUJO DE PAGO
+   Cliente → Frontend → API Gateway → Eureka Server
+   → Payment Service
+   → Orders Service (actualizar estado)
+   → Notification Service (confirmar pago)
+
+3. FLUJO DE COCINA
+   Kitchen Service → Menu Service (consumir ingredientes)
+   → Inventory Service (actualizar stock)
+   → Notification Service (alertas de stock bajo)
+
+INTEGRACIONES ENTRE SERVICIOS
+==============================
+
+┌──────────────┐
+│ Menu Service │◄─────────────────────────────────────┐
+└──────┬───────┘                                      │
+       │                                             │
+       │                                             │
+       ▼                                             │
+┌──────────────┐                              ┌──────────────┐
+│Inventory     │                              │ Orders       │
+│Service       │──────────────────────────────►│Service       │
+└──────────────┘                              └──────┬───────┘
+                                                     │
+                                                     ▼
+                                              ┌──────────────┐
+                                              │ Kitchen      │
+                                              │ Service      │
+                                              └──────┬───────┘
+                                                     │
+                                                     ▼
+                                              ┌──────────────┐
+                                              │ Notification │
+                                              │ Service      │
+                                              └──────────────┘
+
+TECNOLOGÍAS POR CAPA
+=====================
+
+CAPA DE PRESENTACIÓN
+- React.js
+- Axios
+- CSS
+- NPM
+
+CAPA DE GATEWAY
+- Spring Cloud Gateway
+- Netflix Eureka
+- Spring Security
+- Resilience4j
+
+CAPA DE SERVICIOS
+- Spring Boot 4.0.5
+- Spring Data JPA
+- Spring Security
+- MySQL Connector
+- Resilience4j
+- OpenAPI/Swagger
+
+CAPA DE DATOS
+- MySQL 8.0
+- Hibernate/JPA
+- Flyway (migraciones)
+- Connection Pooling
+
+SEGURIDAD
+==========
+
+┌─────────────────────────────────────────────────────────────────┐
+│                        CAPA DE SEGURIDAD                         │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   JWT        │  │   OAuth2     │  │  HTTPS/TLS   │          │
+│  │   Tokens     │  │   (Opcional) │  │   Encryption  │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   BCrypt     │  │   RBAC       │  │   Rate Limit  │          │
+│  │   Password   │  │   Roles      │  │   Protection  │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+
+MONITOREO Y LOGGING
+====================
+
+┌─────────────────────────────────────────────────────────────────┐
+│                      MONITOREO                                   │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   SLF4J      │  │   Micrometer │  │   Actuator   │          │
+│  │   Logging    │  │   Metrics    │  │   Endpoints  │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   Zipkin     │  │   Prometheus │  │   Grafana    │          │
+│  │   Tracing    │  │   Monitoring│  │   Dashboards │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+
+RESILIENCIA
+===========
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    PATRONES DE RESILIENCIA                        │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   Circuit    │  │   Retry      │  │   Timeout    │          │
+│  │   Breaker    │  │   Pattern    │  │   Handling   │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   Fallback   │  │   Bulkhead   │  │   Rate       │          │
+│  │   Methods    │  │   Pattern    │  │   Limiter    │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+
+DEPLOYMENT
+==========
+
+┌─────────────────────────────────────────────────────────────────┐
+│                    ARQUITECTURA DE DEPLOYMENT                     │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   Docker     │  │   Kubernetes │  │   AWS/Azure  │          │
+│  │   Containers │  │   Orchestration│  │   Cloud      │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+│                                                                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
+│  │   CI/CD      │  │   GitHub     │  │   Jenkins    │          │
+│  │   Pipeline   │  │   Actions    │  │   (Opcional) │          │
+│  └──────────────┘  └──────────────┘  └──────────────┘          │
+└─────────────────────────────────────────────────────────────────┘
+
+CONCLUSIÓN
+==========
+La arquitectura de microservicios de QuickBite sigue los principios de diseño de sistemas distribuidos modernos, con separación clara de responsabilidades, comunicación asíncrona donde es apropiado, y patrones de resiliencia para garantizar alta disponibilidad y escalabilidad.
