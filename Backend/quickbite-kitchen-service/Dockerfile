@@ -1,29 +1,13 @@
-# Use OpenJDK 17 as base image
-FROM openjdk:17-jdk-slim
-
-# Set working directory
+# Build stage
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
-
-# Copy Maven configuration files
 COPY pom.xml .
-COPY .mvn .mvn
-COPY mvnw .
-
-# Download dependencies
-RUN ./mvnw dependency:go-offline -B
-
-# Copy source code
 COPY src ./src
+RUN mvn clean package -DskipTests
 
-# Build the application
-RUN ./mvnw clean package -DskipTests
-
-# Expose port
-EXPOSE 8083
-
-# Set environment variables
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
-ENV SPRING_PROFILES_ACTIVE=prod
-
-# Run the application
-CMD ["java", "-jar", "target/kitchen-service-1.0.0.jar"]
+# Runtime stage
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
+EXPOSE 8085
+ENTRYPOINT ["java", "-jar", "app.jar"]
