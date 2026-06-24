@@ -46,7 +46,13 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
-		
+		<!-- Jakarta Dependencies -->
+		<dependency>
+    		<groupId>jakarta.servlet</groupId>
+    		<artifactId>jakarta.servlet-api</artifactId>
+   	 		<version>6.0.0</version>
+    		<scope>provided</scope>
+		</dependency>
 		<!-- JWT Dependencies -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
@@ -83,7 +89,7 @@
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<optional>true</optional>
+			<version>1.18.30</version> <optional>true</optional>
 		</dependency>
 		
 		<!-- OpenAPI/Swagger Documentation -->
@@ -115,6 +121,15 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+       				<annotationProcessorPaths>
+            			<path>
+                			<groupId>org.projectlombok</groupId>
+                			<artifactId>lombok</artifactId>
+                			<version>1.18.30</version>
+            			</path>
+        			</annotationProcessorPaths>
+    			</configuration>
 			</plugin>
 		</plugins>
 	</build>
