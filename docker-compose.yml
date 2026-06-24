@@ -34,6 +34,13 @@ services:
     environment:
       - SPRING_APPLICATION_NAME=api-gateway
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - AUTH_SERVICE_URI=http://auth-service:8081
+      - INVENTORY_SERVICE_URI=http://inventory-service:8082
+      - MENU_SERVICE_URI=http://menu-service:8083
+      - ORDER_SERVICE_URI=http://orders-service:8084
+      - PAYMENT_SERVICE_URI=http://payment-service:8085
+      - KITCHEN_SERVICE_URI=http://kitchen-service:8086
+      - NOTIFICATION_SERVICE_URI=http://notifications-service:8087
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -148,6 +155,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/pedidos_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SERVICES_MENU_SERVICE_URL=http://menu-service:8083
+      - SERVICES_KITCHEN_SERVICE_URL=http://kitchen-service:8086
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -170,42 +179,14 @@ services:
       dockerfile: Dockerfile
     container_name: quickbite-kitchen-service
     ports:
-      - "8085:8085"
+      - "8086:8086"
     environment:
       - SPRING_APPLICATION_NAME=kitchen-service
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/kitchen_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=rootpassword
-    depends_on:
-      eureka-server:
-        condition: service_healthy
-      mysql:
-        condition: service_started
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
-    networks:
-      - quickbite-network
-
-  # Notifications Service
-  notifications-service:
-    build:
-      context: ./Backend/quickbite-ms-notificaciones
-      dockerfile: Dockerfile
-    container_name: quickbite-notifications-service
-    ports:
-      - "8086:8086"
-    environment:
-      - SPRING_APPLICATION_NAME=notifications-service
-      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/notificaciones_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
-      - SPRING_DATASOURCE_USERNAME=root
-      - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SERVICES_MENU_SERVICE_URL=http://menu-service:8083
     depends_on:
       eureka-server:
         condition: service_healthy
@@ -221,18 +202,18 @@ services:
     networks:
       - quickbite-network
 
-  # Payment Service
-  payment-service:
+  # Notifications Service
+  notifications-service:
     build:
-      context: ./Backend/quickbite-payment-service
+      context: ./Backend/quickbite-ms-notificaciones
       dockerfile: Dockerfile
-    container_name: quickbite-payment-service
+    container_name: quickbite-notifications-service
     ports:
       - "8087:8087"
     environment:
-      - SPRING_APPLICATION_NAME=payment-service
+      - SPRING_APPLICATION_NAME=notifications-service
       - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/payment_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/notificaciones_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       - SPRING_DATASOURCE_USERNAME=root
       - SPRING_DATASOURCE_PASSWORD=rootpassword
     depends_on:
@@ -243,6 +224,36 @@ services:
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - quickbite-network
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./Backend/quickbite-payment-service
+      dockerfile: Dockerfile
+    container_name: quickbite-payment-service
+    ports:
+      - "8085:8085"
+    environment:
+      - SPRING_APPLICATION_NAME=payment-service
+      - EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/payment_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=rootpassword
+      - SERVICES_ORDER_SERVICE_URL=http://orders-service:8084
+    depends_on:
+      eureka-server:
+        condition: service_healthy
+      mysql:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -272,7 +283,7 @@ services:
       - quickbite-network
 
   # Frontend React
-frontend:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile

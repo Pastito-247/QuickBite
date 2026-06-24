@@ -43,6 +43,45 @@ const Restaurants = () => {
   const [isEditingAddress, setIsEditingAddress] = useState(false);
   const [tempAddress, setTempAddress] = useState(address);
 
+  // Restaurantes reales creados desde el panel de administración (backend)
+  const [apiRestaurants, setApiRestaurants] = useState([]);
+  const gradients = [
+    'from-rose-500 to-pink-600',
+    'from-sky-500 to-indigo-600',
+    'from-emerald-500 to-teal-600',
+    'from-violet-500 to-purple-600',
+    'from-amber-500 to-orange-600',
+  ];
+
+  useEffect(() => {
+    const loadRestaurants = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/restaurants/active');
+        if (!response.ok) return;
+        const data = await response.json();
+        const mapped = data.map((r, i) => ({
+          id: r.id,
+          name: r.name,
+          type: 'Restaurante',
+          rating: 5.0,
+          time: '20-30 min',
+          deliveryFee: 'Gratis',
+          gradient: gradients[i % gradients.length],
+          logo: r.imageUrl || null,
+          banner: r.imageUrl || null,
+          isReal: true,
+        }));
+        setApiRestaurants(mapped);
+      } catch (error) {
+        console.error('Error cargando restaurantes:', error);
+      }
+    };
+    loadRestaurants();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const allRestaurants = [...apiRestaurants, ...mockRestaurants];
+
   // Sincronizar filtros si cambian los parámetros de búsqueda en la URL
   useEffect(() => {
     const params = new URLSearchParams(routerLocation.search);
@@ -89,7 +128,7 @@ const Restaurants = () => {
     navigate(`/restaurants?${params.toString()}`, { replace: true });
   };
 
-  const filteredRestaurants = mockRestaurants.filter(restaurant => {
+  const filteredRestaurants = allRestaurants.filter(restaurant => {
     const matchesSearch = restaurant.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           restaurant.type.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -193,9 +232,9 @@ const Restaurants = () => {
         <div className="mb-8 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
           <h2 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4">Marcas destacadas en tu zona</h2>
           <div className="flex items-center space-x-6 overflow-x-auto pb-2 scrollbar-hide">
-            {mockRestaurants.map((brand) => (
+            {allRestaurants.map((brand) => (
               <button
-                key={brand.id}
+                key={`${brand.isReal ? 'r' : 'm'}-${brand.id}`}
                 onClick={() => handleBrandSelect(brand.name)}
                 className="flex flex-col items-center space-y-2 flex-shrink-0 group focus:outline-none"
               >
@@ -234,7 +273,7 @@ const Restaurants = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {filteredRestaurants.map(restaurant => (
               <div 
-                key={restaurant.id} 
+                key={`${restaurant.isReal ? 'r' : 'm'}-${restaurant.id}`} 
                 className="bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 group flex flex-col h-full relative"
               >
                 

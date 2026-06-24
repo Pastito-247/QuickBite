@@ -221,7 +221,13 @@ public class PedidoService {
         Pedido pedidoActualizado = pedidoRepository.save(pedido);
         return PedidoResponse.fromEntity(pedidoActualizado);
     }
-    
+
+    public PedidoResponse actualizarEstadoPedidoPorNumero(String numeroPedido, Pedido.EstadoPedido nuevoEstado) {
+        Pedido pedido = pedidoRepository.findByNumeroPedido(numeroPedido)
+                .orElseThrow(() -> new PedidoNotFoundException("Pedido no encontrado con número: " + numeroPedido));
+        return actualizarEstadoPedido(pedido.getId(), nuevoEstado);
+    }
+
     public PedidoResponse actualizarNotasRestaurante(Long id, String notas) {
         Pedido pedido = pedidoRepository.findById(id)
                 .orElseThrow(() -> new PedidoNotFoundException("Pedido no encontrado con ID: " + id));

@@ -153,6 +153,21 @@ public class PedidoController {
         
         return ResponseEntity.ok(pedidoActualizado);
     }
+
+    @PutMapping("/numero/{numeroPedido}/estado")
+    public ResponseEntity<PedidoResponse> actualizarEstadoPedidoPorNumero(
+            @PathVariable String numeroPedido,
+            @RequestBody Map<String, String> request) {
+
+        String estadoStr = request.get("estado");
+        Pedido.EstadoPedido nuevoEstado = Pedido.EstadoPedido.valueOf(estadoStr.toUpperCase());
+
+        log.info("Solicitud para actualizar estado del pedido {} a: {}", numeroPedido, nuevoEstado);
+
+        PedidoResponse pedidoActualizado = pedidoService.actualizarEstadoPedidoPorNumero(numeroPedido, nuevoEstado);
+
+        return ResponseEntity.ok(pedidoActualizado);
+    }
     
     @PutMapping("/{id}/notas")
     public ResponseEntity<PedidoResponse> actualizarNotasRestaurante(

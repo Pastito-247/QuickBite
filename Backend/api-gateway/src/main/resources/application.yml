@@ -7,35 +7,34 @@ spring:
   cloud:
     gateway:
       default-filters:
-        # Si un servicio downstream y el gateway agregan CORS, conserva solo el primero
-        # (del servicio downstream) para evitar el error de "multiple values".
+        # CORS lo maneja UNICAMENTE el gateway (CorsConfig -> CorsWebFilter).
+        # Quitamos el header Origin antes de reenviar al microservicio para que
+        # los servicios downstream (algunos solo permiten localhost:3000) no
+        # vuelvan a evaluar CORS y rechacen la peticion con 403 "Invalid CORS
+        # request". El CorsWebFilter ya agrego los headers de respuesta antes de
+        # que corra este filtro de ruteo, asi que el navegador sigue recibiendo
+        # Access-Control-Allow-Origin correctamente.
+        - RemoveRequestHeader=Origin
+        # Si aun asi un downstream agregara CORS, conserva solo el primer valor
+        # para evitar el error de "multiple values".
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
-      # NOTA: CORS lo manejan los microservicios via @CrossOrigin / CorsConfigurationSource.
-      # Si necesitas CORS aqui, descomentalo y asegurate que ningun servicio agregue su propio CORS.
-      # globalcors:
-      #   cors-configurations:
-      #     '[/**]':
-      #       allowedOriginPatterns: "*"
-      #       allowedMethods: "*"
-      #       allowedHeaders: "*"
-      #       allowCredentials: true
       routes:
         # ===== Auth Service (8081) =====
         # Controller: /api/v1/auth/**
         - id: auth-service-v1
-          uri: http://localhost:8081
+          uri: "${AUTH_SERVICE_URI:http://localhost:8081}"
           predicates:
             - Path=/api/v1/auth/**
         # Alias /api/auth/login -> /api/v1/auth/authenticate
         - id: auth-service-login
-          uri: http://localhost:8081
+          uri: "${AUTH_SERVICE_URI:http://localhost:8081}"
           predicates:
             - Path=/api/auth/login
           filters:
             - SetPath=/api/v1/auth/authenticate
         # Alias /api/auth/** -> /api/v1/auth/**
         - id: auth-service-alias
-          uri: http://localhost:8081
+          uri: "${AUTH_SERVICE_URI:http://localhost:8081}"
           predicates:
             - Path=/api/auth/**
           filters:
@@ -45,49 +44,57 @@ spring:
         # Controllers: /api/menu/**, /api/categories/**, /api/admin/menu/**
         # Alias /api/menu/items -> /api/menu (el controller no tiene /items)
         - id: menu-items-alias
-          uri: http://localhost:8083
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
           predicates:
             - Path=/api/menu/items
           filters:
             - SetPath=/api/menu
         - id: menu-service
-          uri: http://localhost:8083
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
           predicates:
             - Path=/api/menu/**
         - id: menu-categories
-          uri: http://localhost:8083
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
           predicates:
             - Path=/api/categories/**
         - id: menu-admin
-          uri: http://localhost:8083
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
           predicates:
             - Path=/api/admin/menu/**
+        # Controller: /api/admin/menu-ingredients/**
+        - id: menu-ingredients
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
+          predicates:
+            - Path=/api/admin/menu-ingredients,/api/admin/menu-ingredients/**
+        # Controller: /api/restaurants/**
+        - id: menu-restaurants
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
+          predicates:
+            - Path=/api/restaurants,/api/restaurants/**
 
         # ===== Inventory Service (8082) =====
-        # Controller: /inventory/**  (sin prefijo /api)
+        # Controller: /api/inventory/**
         - id: inventory-service
-          uri: http://localhost:8082
+          uri: "${INVENTORY_SERVICE_URI:http://localhost:8082}"
           predicates:
             - Path=/api/inventory,/api/inventory/**
-          filters:
-            - RewritePath=/api/inventory(?<segment>/?.*), /inventory$\{segment}
 
         # ===== Order Service (8084) =====
         # Controller: /api/v1/pedidos/**
         - id: order-service-v1
-          uri: http://localhost:8084
+          uri: "${ORDER_SERVICE_URI:http://localhost:8084}"
           predicates:
             - Path=/api/v1/pedidos/**
         # Alias /api/orders/user/{id} -> /api/v1/pedidos/cliente/{id}
         - id: order-service-user-alias
-          uri: http://localhost:8084
+          uri: "${ORDER_SERVICE_URI:http://localhost:8084}"
           predicates:
             - Path=/api/orders/user/**
           filters:
             - RewritePath=/api/orders/user(?<segment>/?.*), /api/v1/pedidos/cliente$\{segment}
         # Alias /api/orders/** -> /api/v1/pedidos/**
         - id: order-service-alias
-          uri: http://localhost:8084
+          uri: "${ORDER_SERVICE_URI:http://localhost:8084}"
           predicates:
             - Path=/api/orders,/api/orders/**
           filters:
@@ -96,22 +103,22 @@ spring:
         # ===== Payment Service (8085) =====
         # Controllers: /api/payments/**, /api/wallets/**, /api/transactions/**
         - id: payment-service
-          uri: http://localhost:8085
+          uri: "${PAYMENT_SERVICE_URI:http://localhost:8085}"
           predicates:
             - Path=/api/payments/**
         - id: payment-wallets
-          uri: http://localhost:8085
+          uri: "${PAYMENT_SERVICE_URI:http://localhost:8085}"
           predicates:
             - Path=/api/wallets/**
         - id: payment-transactions
-          uri: http://localhost:8085
+          uri: "${PAYMENT_SERVICE_URI:http://localhost:8085}"
           predicates:
             - Path=/api/transactions/**
 
         # ===== Kitchen Service (8086) =====
         # Controller: /orders/** (sin prefijo /api)
         - id: kitchen-service
-          uri: http://localhost:8086
+          uri: "${KITCHEN_SERVICE_URI:http://localhost:8086}"
           predicates:
             - Path=/api/kitchen,/api/kitchen/**
           filters:
@@ -120,12 +127,12 @@ spring:
         # ===== Notification Service (8087) =====
         # Controller: /api/notificaciones/**
         - id: notification-service-es
-          uri: http://localhost:8087
+          uri: "${NOTIFICATION_SERVICE_URI:http://localhost:8087}"
           predicates:
             - Path=/api/notificaciones/**
         # Alias en ingles
         - id: notification-service-en
-          uri: http://localhost:8087
+          uri: "${NOTIFICATION_SERVICE_URI:http://localhost:8087}"
           predicates:
             - Path=/api/notifications/**
           filters:

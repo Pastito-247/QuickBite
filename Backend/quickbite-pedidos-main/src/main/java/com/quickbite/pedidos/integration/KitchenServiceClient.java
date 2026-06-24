@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@FeignClient(name = "kitchen-service", url = "http://localhost:8086")
+@FeignClient(name = "kitchen-service", url = "${services.kitchen-service.url:http://localhost:8086}")
 public interface KitchenServiceClient {
 
     /**

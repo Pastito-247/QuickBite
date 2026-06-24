@@ -1,5 +1,6 @@
 package com.quickbite.kitchen.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.jdbc.DataSourceBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,19 +18,23 @@ import java.util.Properties;
 public class DatabaseConfig {
     
     @Bean
-    public DataSource dataSource() {
+    public DataSource dataSource(
+            @Value("${spring.datasource.url}") String url,
+            @Value("${spring.datasource.username}") String username,
+            @Value("${spring.datasource.password}") String password,
+            @Value("${spring.datasource.driver-class-name}") String driverClassName) {
         return DataSourceBuilder.create()
-                .driverClassName("com.mysql.cj.jdbc.Driver")
-                .url("jdbc:mysql://localhost:3306/quickbite_kitchen_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true")
-                .username("root")
-                .password("root")
+                .driverClassName(driverClassName)
+                .url(url)
+                .username(username)
+                .password(password)
                 .build();
     }
     
     @Bean
-    public LocalContainerEntityManagerFactoryBean entityManagerFactory() {
+    public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
-        em.setDataSource(dataSource());
+        em.setDataSource(dataSource);
         em.setPackagesToScan("com.quickbite.kitchen.model");
         
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
@@ -49,9 +54,9 @@ public class DatabaseConfig {
     }
     
     @Bean
-    public PlatformTransactionManager transactionManager() {
+    public PlatformTransactionManager transactionManager(LocalContainerEntityManagerFactoryBean entityManagerFactory) {
         JpaTransactionManager transactionManager = new JpaTransactionManager();
-        transactionManager.setEntityManagerFactory(entityManagerFactory().getObject());
+        transactionManager.setEntityManagerFactory(entityManagerFactory.getObject());
         return transactionManager;
     }
 }
