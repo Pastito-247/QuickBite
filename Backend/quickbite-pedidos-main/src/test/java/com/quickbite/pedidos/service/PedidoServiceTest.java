@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort; 
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -230,7 +231,7 @@ class PedidoServiceTest {
         // Given
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(testPedido));
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(testPedido);
-        when(menuServiceClient.consumeIngredients(anyLong(), anyInt())).thenReturn(true);
+        when(menuServiceClient.consumeIngredients(anyLong(), anyInt())).thenReturn(java.util.Map.of("success", "true"));
 
         // When
         PedidoResponse result = pedidoService.actualizarEstadoPedido(1L, Pedido.EstadoPedido.EN_PREPARACION);
@@ -257,7 +258,7 @@ class PedidoServiceTest {
         // Given
         when(pedidoRepository.findById(1L)).thenReturn(Optional.of(testPedido));
         when(pedidoRepository.save(any(Pedido.class))).thenReturn(testPedido);
-        when(kitchenServiceClient.updateOrderStatus(anyString(), anyString())).thenReturn(true);
+        when(kitchenServiceClient.updateOrderStatus(anyString(), anyString())).thenReturn(java.util.Map.of("success", true));
 
         // When
         pedidoService.cancelarPedido(1L);
