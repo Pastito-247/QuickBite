@@ -43,8 +43,8 @@ const Login = () => {
 
     try {
       const url = isRegistering 
-        ? 'http://localhost:8080/api/v1/auth/register' 
-        : 'http://localhost:8080/api/v1/auth/authenticate';
+        ? '/api/v1/auth/register' 
+        : '/api/v1/auth/authenticate';
 
       const payload = isRegistering ? {
         username: formData.username,
@@ -319,3 +319,4 @@ const Login = () => {
 };
 
 export default Login;
+

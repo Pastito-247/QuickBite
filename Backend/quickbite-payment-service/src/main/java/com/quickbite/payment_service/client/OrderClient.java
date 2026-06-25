@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Map;
 
-@FeignClient(name = "order-service", url = "http://localhost:8084")
+@FeignClient(name = "order-service", url = "${services.order-service.url:http://localhost:8084}")
 public interface OrderClient {
 
     @GetMapping("/api/v1/pedidos/{orderId}")
@@ -18,8 +18,8 @@ public interface OrderClient {
     /**
      * Actualiza el estado de un pedido. Body: { "estado": "CONFIRMADO" }
      */
-    @PutMapping("/api/v1/pedidos/{orderId}/estado")
-    Map<String, Object> updateOrderStatus(@PathVariable String orderId, @RequestBody Map<String, Object> statusUpdate);
+    @PutMapping("/api/v1/pedidos/numero/{numeroPedido}/estado")
+    Map<String, Object> updateOrderStatus(@PathVariable String numeroPedido, @RequestBody Map<String, Object> statusUpdate);
 
     @GetMapping("/api/v1/pedidos/cliente/{userId}")
     Map<String, Object>[] getOrdersByCustomer(@PathVariable String userId);

@@ -69,7 +69,7 @@ const Profile = () => {
           return;
         }
 
-        const response = await fetch(`http://localhost:8081/api/v1/auth/profile/${userId}`, {
+        const response = await fetch(`/api/v1/auth/profile/${userId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           },
@@ -158,7 +158,7 @@ const Profile = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:8081/api/v1/auth/profile/${userId}`, {
+      const response = await fetch(`/api/v1/auth/profile/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -416,3 +416,4 @@ const Profile = () => {
 };
 
 export default Profile;
+

@@ -59,7 +59,7 @@ const CartSidebar = () => {
       // Validate stock for this restaurant's items
       for (const item of restaurantGroup.items) {
         if (item.id < 100) {
-          const response = await fetch(`http://localhost:8083/api/menu/${item.id}/validate-stock?quantity=${item.quantity}`);
+          const response = await fetch(`/api/menu/${item.id}/validate-stock?quantity=${item.quantity}`);
           if (response.ok) {
             const data = await response.json();
             if (!data.hasSufficientStock) {
@@ -94,7 +94,7 @@ const CartSidebar = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:8080/api/v1/pedidos', {
+      const response = await fetch('/api/v1/pedidos', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -271,3 +271,4 @@ const CartSidebar = () => {
 };
 
 export default CartSidebar;
+

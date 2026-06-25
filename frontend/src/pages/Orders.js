@@ -21,8 +21,9 @@ const Orders = () => {
   const mapEstado = (estado) => {
     switch ((estado || '').toUpperCase()) {
       case 'PENDIENTE':
-      case 'CONFIRMADO':
         return 'pending';
+      case 'CONFIRMADO':
+        return 'confirmed';
       case 'EN_PREPARACION':
       case 'PREPARANDO':
         return 'preparing';
@@ -79,7 +80,7 @@ const Orders = () => {
         setLoading(false);
         return;
       }
-      const response = await fetch(`http://localhost:8080/api/orders/user/${userId}`);
+      const response = await fetch(`/api/orders/user/${userId}`);
       if (response.ok) {
         const data = await response.json();
         const list = Array.isArray(data) ? data : (data.content || []);
@@ -110,14 +111,14 @@ const Orders = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       // Llamar al backend para cancelar el pedido de verdad
-      let response = await fetch(`http://localhost:8080/api/orders/${order.backendId}/cancelar`, {
+      let response = await fetch(`/api/orders/${order.backendId}/cancelar`, {
         method: 'DELETE',
         headers
       });
 
       // Fallback: si DELETE /cancelar falla, intentar con PUT /estado
       if (!response.ok) {
-        response = await fetch(`http://localhost:8080/api/orders/${order.backendId}/estado`, {
+        response = await fetch(`/api/orders/${order.backendId}/estado`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...headers },
           body: JSON.stringify({ estado: 'CANCELADO' })
@@ -154,6 +155,8 @@ const Orders = () => {
     switch (status) {
       case 'pending':
         return <Clock className="h-5 w-5 text-yellow-500" />;
+      case 'confirmed':
+        return <CheckCircle className="h-5 w-5 text-green-600" />;
       case 'preparing':
         return <Package className="h-5 w-5 text-primary-500" />;
       case 'ready':
@@ -171,6 +174,8 @@ const Orders = () => {
     switch (status) {
       case 'pending':
         return 'Pendiente';
+      case 'confirmed':
+        return 'Confirmado';
       case 'preparing':
         return 'En preparación';
       case 'ready':
@@ -188,6 +193,8 @@ const Orders = () => {
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed':
+        return 'bg-green-100 text-green-800';
       case 'preparing':
         return 'bg-blue-100 text-blue-800';
       case 'ready':
@@ -226,7 +233,7 @@ const Orders = () => {
 
   const displayedOrders = orders.filter(order => 
     activeTab === 'active' 
-      ? ['pending', 'preparing', 'ready'].includes(order.status)
+      ? ['pending', 'confirmed', 'preparing', 'ready'].includes(order.status)
       : ['delivered', 'cancelled'].includes(order.status)
   );
 
@@ -335,7 +342,7 @@ const Orders = () => {
                 )}
                 
                 <div className="mt-4 flex justify-end space-x-2">
-                  {order.status === 'pending' && (
+                  {['pending', 'confirmed'].includes(order.status) && (
                     <button 
                       onClick={(e) => { e.stopPropagation(); cancelOrder(order.id); }}
                       className="px-3 py-1.5 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 rounded-md transition-colors"
@@ -441,3 +448,4 @@ const Orders = () => {
 };
 
 export default Orders;
+

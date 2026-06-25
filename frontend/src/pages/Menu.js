@@ -214,7 +214,7 @@ const Menu = () => {
 
   const loadRestaurantName = async () => {
     try {
-      const response = await fetch(`http://localhost:8083/api/restaurants/${id}`);
+      const response = await fetch(`/api/restaurants/${id}`);
       if (response.ok) {
         const data = await response.json();
         setRestaurantName(data.name);
@@ -228,7 +228,7 @@ const Menu = () => {
 
   const loadMenuItems = async () => {
     try {
-      const response = await fetch('http://localhost:8083/api/menu');
+      const response = await fetch('/api/menu');
       if (response.ok) {
         const data = await response.json();
         const filteredData = id ? data.filter(item => item.restaurantId === parseInt(id)) : data;
@@ -261,7 +261,7 @@ const Menu = () => {
     for (const item of items) {
       try {
         if (item.id < 100) {
-          const response = await fetch(`http://localhost:8083/api/menu/${item.id}/validate-stock?quantity=1`);
+          const response = await fetch(`/api/menu/${item.id}/validate-stock?quantity=1`);
           if (response.ok) {
             const data = await response.json();
             stockStatus[item.id] = data.hasSufficientStock;
@@ -283,7 +283,7 @@ const Menu = () => {
     for (const item of items) {
       try {
         if (item.id < 100) {
-          const response = await fetch(`http://localhost:8083/api/admin/menu-ingredients/${item.id}`);
+          const response = await fetch(`/api/admin/menu-ingredients/${item.id}`);
           if (response.ok) {
             const data = await response.json();
             ingredientsMap[item.id] = data;
@@ -711,3 +711,4 @@ const Menu = () => {
 };
 
 export default Menu;
+
