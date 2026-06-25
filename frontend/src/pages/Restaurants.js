@@ -56,7 +56,7 @@ const Restaurants = () => {
   useEffect(() => {
     const loadRestaurants = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/restaurants/active');
+        const response = await fetch('/api/restaurants/active');
         if (!response.ok) return;
         const data = await response.json();
         const mapped = data.map((r, i) => ({
@@ -358,3 +358,4 @@ const Restaurants = () => {
 };
 
 export default Restaurants;
+

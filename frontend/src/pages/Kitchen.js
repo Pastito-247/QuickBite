@@ -65,7 +65,7 @@ const Kitchen = () => {
 
   const loadOrders = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/orders?page=0&size=100&activos=true');
+      const response = await fetch('/api/orders?page=0&size=100&activos=true');
       if (response.ok) {
         const data = await response.json();
         const rawList = Array.isArray(data) ? data : (data.content || []);
@@ -130,7 +130,7 @@ const Kitchen = () => {
         return;
       }
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:8080/api/orders/${order.backendId}/estado`, {
+      const response = await fetch(`/api/orders/${order.backendId}/estado`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -474,3 +474,4 @@ const Kitchen = () => {
 };
 
 export default Kitchen;
+

@@ -164,7 +164,7 @@ describe('NotificationBadge Component', () => {
     
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
-        'http://localhost:8080/api/notificaciones/1/marcar-leida',
+        '/api/notificaciones/1/marcar-leida',
         expect.objectContaining({
           method: 'PUT',
         })
@@ -188,3 +188,4 @@ describe('NotificationBadge Component', () => {
     });
   });
 });
+

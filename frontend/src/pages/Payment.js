@@ -39,7 +39,7 @@ const Payment = () => {
       const userId = localStorage.getItem('userId');
 
       // 1. Process payment in payment-service
-      const paymentResponse = await fetch('http://localhost:8080/api/payments/process', {
+      const paymentResponse = await fetch('/api/payments/process', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +65,7 @@ const Payment = () => {
 
       // 2. The payment service should ideally trigger order confirmation via openfeign, 
       // but let's confirm the order status manually just in case
-      await fetch(`http://localhost:8080/api/v1/pedidos/${backendId}/estado`, {
+      await fetch(`/api/v1/pedidos/${backendId}/estado`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -168,3 +168,4 @@ const Payment = () => {
 };
 
 export default Payment;
+

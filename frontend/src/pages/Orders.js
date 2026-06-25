@@ -80,7 +80,7 @@ const Orders = () => {
         setLoading(false);
         return;
       }
-      const response = await fetch(`http://localhost:8080/api/orders/user/${userId}`);
+      const response = await fetch(`/api/orders/user/${userId}`);
       if (response.ok) {
         const data = await response.json();
         const list = Array.isArray(data) ? data : (data.content || []);
@@ -111,14 +111,14 @@ const Orders = () => {
       const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
       // Llamar al backend para cancelar el pedido de verdad
-      let response = await fetch(`http://localhost:8080/api/orders/${order.backendId}/cancelar`, {
+      let response = await fetch(`/api/orders/${order.backendId}/cancelar`, {
         method: 'DELETE',
         headers
       });
 
       // Fallback: si DELETE /cancelar falla, intentar con PUT /estado
       if (!response.ok) {
-        response = await fetch(`http://localhost:8080/api/orders/${order.backendId}/estado`, {
+        response = await fetch(`/api/orders/${order.backendId}/estado`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json', ...headers },
           body: JSON.stringify({ estado: 'CANCELADO' })
@@ -448,3 +448,4 @@ const Orders = () => {
 };
 
 export default Orders;
+

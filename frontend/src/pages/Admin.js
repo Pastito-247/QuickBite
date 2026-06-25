@@ -108,7 +108,7 @@ const Admin = () => {
 
   const loadDashboardData = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/v1/pedidos/estadisticas');
+      const response = await fetch('/api/v1/pedidos/estadisticas');
       if (response.ok) {
         const data = await response.json();
         setStats(prev => ({
@@ -133,7 +133,7 @@ const Admin = () => {
 
   const loadInventory = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/inventory');
+      const response = await fetch('/api/inventory');
       if (response.ok) {
         const data = await response.json();
         setInventory(data);
@@ -182,8 +182,8 @@ const Admin = () => {
     e.preventDefault();
     try {
       const url = editingInventoryItem 
-        ? `http://localhost:8080/api/inventory/${editingInventoryItem}`
-        : 'http://localhost:8080/api/inventory';
+        ? `/api/inventory/${editingInventoryItem}`
+        : '/api/inventory';
       
       const method = editingInventoryItem ? 'PUT' : 'POST';
 
@@ -210,7 +210,7 @@ const Admin = () => {
   const deleteInventoryItem = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este producto?')) return;
     try {
-      const response = await fetch(`http://localhost:8080/api/inventory/${id}`, {
+      const response = await fetch(`/api/inventory/${id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -233,7 +233,7 @@ const Admin = () => {
 
   const loadMenu = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/admin/menu/all');
+      const response = await fetch('/api/admin/menu/all');
       if (response.ok) {
         const data = await response.json();
         if (selectedRestaurantFilter) {
@@ -252,7 +252,7 @@ const Admin = () => {
 
   const loadRestaurants = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/restaurants');
+      const response = await fetch('/api/restaurants');
       if (response.ok) {
         const data = await response.json();
         setRestaurants(data);
@@ -295,8 +295,8 @@ const Admin = () => {
     e.preventDefault();
     try {
       const url = editingMenuItem
-        ? `http://localhost:8080/api/admin/menu/${editingMenuItem}`
-        : 'http://localhost:8080/api/menu';
+        ? `/api/admin/menu/${editingMenuItem}`
+        : '/api/menu';
       const method = editingMenuItem ? 'PUT' : 'POST';
       const payload = {
         name: menuFormData.name,
@@ -329,7 +329,7 @@ const Admin = () => {
   const deleteMenuItem = async (id) => {
     if (!window.confirm('¿Estás seguro de eliminar este platillo?')) return;
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/menu/${id}`, { method: 'DELETE' });
+      const response = await fetch(`/api/admin/menu/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(`Error ${response.status}`);
       toast.success('Platillo eliminado');
       await loadMenu();
@@ -360,7 +360,7 @@ const Admin = () => {
 
   const loadMenuItemIngredients = async (menuItemId) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/admin/menu-ingredients/${menuItemId}`);
+      const response = await fetch(`/api/admin/menu-ingredients/${menuItemId}`);
       if (response.ok) {
         const data = await response.json();
         setMenuItemIngredients(data);
@@ -379,7 +379,7 @@ const Admin = () => {
     
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}`,
+        `/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -407,7 +407,7 @@ const Admin = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}/${ingredientId}`,
+        `/api/admin/menu-ingredients/${selectedMenuItemForIngredients.id}/${ingredientId}`,
         { method: 'DELETE' }
       );
       if (!response.ok) throw new Error(`Error ${response.status}`);
@@ -427,7 +427,7 @@ const Admin = () => {
         toast.error('No hay usuario logueado');
         return;
       }
-      const response = await fetch(`http://localhost:8080/api/restaurants/owner/${userId}`);
+      const response = await fetch(`/api/restaurants/owner/${userId}`);
       if (response.ok) {
         const data = await response.json();
         setRestaurant({
@@ -465,14 +465,14 @@ const Admin = () => {
       let response;
       if (restaurant.id) {
         // Update existing restaurant
-        response = await fetch(`http://localhost:8080/api/restaurants/${restaurant.id}`, {
+        response = await fetch(`/api/restaurants/${restaurant.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
       } else {
         // Create new restaurant
-        response = await fetch('http://localhost:8080/api/restaurants', {
+        response = await fetch('/api/restaurants', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -502,7 +502,7 @@ const Admin = () => {
       return;
     }
     try {
-      const response = await fetch(`http://localhost:8080/api/restaurants/${id}`, {
+      const response = await fetch(`/api/restaurants/${id}`, {
         method: 'DELETE'
       });
       if (response.ok) {
@@ -530,7 +530,7 @@ const Admin = () => {
   // Funciones para gestionar historial de ventas
   const loadAllOrders = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/orders?page=0&size=200');
+      const response = await fetch('/api/orders?page=0&size=200');
       if (response.ok) {
         const data = await response.json();
         const list = Array.isArray(data) ? data : (data.content || []);
@@ -545,8 +545,8 @@ const Admin = () => {
     try {
       // Si hay restaurante, buscar por restaurante; si no, buscar todos
       const url = restaurant.id
-        ? `http://localhost:8080/api/v1/pedidos/restaurante/${restaurant.id}`
-        : 'http://localhost:8080/api/orders?page=0&size=50';
+        ? `/api/v1/pedidos/restaurante/${restaurant.id}`
+        : '/api/orders?page=0&size=50';
       const response = await fetch(url);
       if (response.ok) {
         const data = await response.json();
@@ -1694,3 +1694,4 @@ const Admin = () => {
 };
 
 export default Admin;
+
