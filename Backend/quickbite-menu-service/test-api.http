@@ -1,0 +1,78 @@
+### QuickBite Menu Service - API Testing
+### Variables
+@baseUrl = http://localhost:8081
+@contentType = application/json
+
+### Health Check
+GET {{baseUrl}}/actuator/health
+
+### 1. Get Available Menu (Client endpoint)
+GET {{baseUrl}}/api/menu
+Content-Type: {{contentType}}
+
+### 2. Get Menu Item by ID
+GET {{baseUrl}}/api/menu/1
+Content-Type: {{contentType}}
+
+### 3. Create New Menu Item
+POST {{baseUrl}}/api/menu
+Content-Type: {{contentType}}
+
+{
+  "name": "Hamburguesa Clásica",
+  "description": "Deliciosa hamburguesa con carne, lechuga, tomate y queso",
+  "price": 8990.0,
+  "category": "Hamburguesas"
+}
+
+### 4. Get All Menu Items (Admin)
+GET {{baseUrl}}/api/admin/menu/all
+Content-Type: {{contentType}}
+
+### 5. Update Menu Item Price
+PUT {{baseUrl}}/api/admin/menu/1/price
+Content-Type: {{contentType}}
+
+{
+  "newPrice": 9990.0
+}
+
+### 6. Update Menu Item Availability
+PATCH {{baseUrl}}/api/admin/menu/1/availability
+Content-Type: {{contentType}}
+
+{
+  "available": false
+}
+
+### 7. Update Complete Menu Item
+PUT {{baseUrl}}/api/admin/menu/1
+Content-Type: {{contentType}}
+
+{
+  "name": "Hamburguesa Premium",
+  "description": "Hamburguesa con ingredientes premium",
+  "price": 12990.0,
+  "category": "Hamburguesas Premium",
+  "available": true
+}
+
+### 8. Get Menu Items by Category
+GET {{baseUrl}}/api/admin/menu/category/Hamburguesas
+Content-Type: {{contentType}}
+
+### 9. Get Unavailable Items
+GET {{baseUrl}}/api/admin/menu/unavailable
+Content-Type: {{contentType}}
+
+### 10. Delete Menu Item
+DELETE {{baseUrl}}/api/admin/menu/1
+Content-Type: {{contentType}}
+
+### 11. Get Application Info
+GET {{baseUrl}}/actuator/info
+Content-Type: {{contentType}}
+
+### 12. Get Metrics
+GET {{baseUrl}}/actuator/metrics
+Content-Type: {{contentType}}

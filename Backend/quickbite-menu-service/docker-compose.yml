@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # 1. Contenedor de la Base de Datos MySQL
+  menu-db:
+    image: mysql:8.0
+    container_name: quickbite-menu-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: quickbite_menu_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - menu_db_data:/var/lib/mysql
+    networks:
+      - quickbite-network
+
+  # 2. Contenedor del Microservicio de Menú
+  menu-service:
+    build: .
+    container_name: quickbite-menu-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://menu-db:3306/quickbite_menu_db?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+    depends_on:
+      - menu-db
+    networks:
+      - quickbite-network
+
+volumes:
+  menu_db_data:
+
+networks:
+  quickbite-network:
+    driver: bridge

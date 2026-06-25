@@ -1,0 +1,181 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        # CORS lo maneja UNICAMENTE el gateway (CorsConfig -> CorsWebFilter).
+        # Quitamos el header Origin antes de reenviar al microservicio para que
+        # los servicios downstream (algunos solo permiten localhost:3000) no
+        # vuelvan a evaluar CORS y rechacen la peticion con 403 "Invalid CORS
+        # request". El CorsWebFilter ya agrego los headers de respuesta antes de
+        # que corra este filtro de ruteo, asi que el navegador sigue recibiendo
+        # Access-Control-Allow-Origin correctamente.
+        - RemoveRequestHeader=Origin
+        # Si aun asi un downstream agregara CORS, conserva solo el primer valor
+        # para evitar el error de "multiple values".
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+      routes:
+        # ===== Auth Service (8081) =====
+        # Controller: /api/v1/auth/**
+        - id: auth-service-v1
+          uri: "${AUTH_SERVICE_URI:http://localhost:8081}"
+          predicates:
+            - Path=/api/v1/auth/**
+        # Alias /api/auth/login -> /api/v1/auth/authenticate
+        - id: auth-service-login
+          uri: "${AUTH_SERVICE_URI:http://localhost:8081}"
+          predicates:
+            - Path=/api/auth/login
+          filters:
+            - SetPath=/api/v1/auth/authenticate
+        # Alias /api/auth/** -> /api/v1/auth/**
+        - id: auth-service-alias
+          uri: "${AUTH_SERVICE_URI:http://localhost:8081}"
+          predicates:
+            - Path=/api/auth/**
+          filters:
+            - RewritePath=/api/auth(?<segment>/?.*), /api/v1/auth$\{segment}
+
+        # ===== Menu Service (8083) =====
+        # Controllers: /api/menu/**, /api/categories/**, /api/admin/menu/**
+        # Alias /api/menu/items -> /api/menu (el controller no tiene /items)
+        - id: menu-items-alias
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
+          predicates:
+            - Path=/api/menu/items
+          filters:
+            - SetPath=/api/menu
+        - id: menu-service
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
+          predicates:
+            - Path=/api/menu/**
+        - id: menu-categories
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
+          predicates:
+            - Path=/api/categories/**
+        - id: menu-admin
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
+          predicates:
+            - Path=/api/admin/menu/**
+        # Controller: /api/admin/menu-ingredients/**
+        - id: menu-ingredients
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
+          predicates:
+            - Path=/api/admin/menu-ingredients,/api/admin/menu-ingredients/**
+        # Controller: /api/restaurants/**
+        - id: menu-restaurants
+          uri: "${MENU_SERVICE_URI:http://localhost:8083}"
+          predicates:
+            - Path=/api/restaurants,/api/restaurants/**
+
+        # ===== Inventory Service (8082) =====
+        # Controller: /api/inventory/**
+        - id: inventory-service
+          uri: "${INVENTORY_SERVICE_URI:http://localhost:8082}"
+          predicates:
+            - Path=/api/inventory,/api/inventory/**
+
+        # ===== Order Service (8084) =====
+        # Controller: /api/v1/pedidos/**
+        - id: order-service-v1
+          uri: "${ORDER_SERVICE_URI:http://localhost:8084}"
+          predicates:
+            - Path=/api/v1/pedidos/**
+        # Alias /api/orders/user/{id} -> /api/v1/pedidos/cliente/{id}
+        - id: order-service-user-alias
+          uri: "${ORDER_SERVICE_URI:http://localhost:8084}"
+          predicates:
+            - Path=/api/orders/user/**
+          filters:
+            - RewritePath=/api/orders/user(?<segment>/?.*), /api/v1/pedidos/cliente$\{segment}
+        # Alias /api/orders/** -> /api/v1/pedidos/**
+        - id: order-service-alias
+          uri: "${ORDER_SERVICE_URI:http://localhost:8084}"
+          predicates:
+            - Path=/api/orders,/api/orders/**
+          filters:
+            - RewritePath=/api/orders(?<segment>/?.*), /api/v1/pedidos$\{segment}
+
+        # ===== Payment Service (8085) =====
+        # Controllers: /api/payments/**, /api/wallets/**, /api/transactions/**
+        - id: payment-service
+          uri: "${PAYMENT_SERVICE_URI:http://localhost:8085}"
+          predicates:
+            - Path=/api/payments/**
+        - id: payment-wallets
+          uri: "${PAYMENT_SERVICE_URI:http://localhost:8085}"
+          predicates:
+            - Path=/api/wallets/**
+        - id: payment-transactions
+          uri: "${PAYMENT_SERVICE_URI:http://localhost:8085}"
+          predicates:
+            - Path=/api/transactions/**
+
+        # ===== Kitchen Service (8086) =====
+        # Controller: /orders/** (sin prefijo /api)
+        - id: kitchen-service
+          uri: "${KITCHEN_SERVICE_URI:http://localhost:8086}"
+          predicates:
+            - Path=/api/kitchen,/api/kitchen/**
+          filters:
+            - RewritePath=/api/kitchen(?<segment>/?.*), /orders$\{segment}
+
+        # ===== Notification Service (8087) =====
+        # Controller: /api/notificaciones/**
+        - id: notification-service-es
+          uri: "${NOTIFICATION_SERVICE_URI:http://localhost:8087}"
+          predicates:
+            - Path=/api/notificaciones/**
+        # Alias en ingles
+        - id: notification-service-en
+          uri: "${NOTIFICATION_SERVICE_URI:http://localhost:8087}"
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - RewritePath=/api/notifications(?<segment>/?.*), /api/notificaciones$\{segment}
+
+      # Circuit Breaker Configuration - Comentado temporalmente
+      # default-filters:
+      #   - name: CircuitBreaker
+      #     args:
+      #       name: default
+      #       fallbackUri: forward:/fallback
+
+  # Circuit Breaker
+  resilience4j:
+    circuitbreaker:
+      instances:
+        default:
+          failureRateThreshold: 50
+          waitDurationInOpenState: 5s
+          slidingWindowSize: 10
+          minimumNumberOfCalls: 5
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway,circuitbreakers
+  endpoint:
+    health:
+      show-details: always
+
+# Logging
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
+    com.quickbite.gateway: DEBUG
